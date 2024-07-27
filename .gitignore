@@ -11,3 +11,10 @@
 
 #!.yarn/cache
 .pnp.*
+
+node_modules
+
+# env files
+.env
+.env.*
+!.env.template

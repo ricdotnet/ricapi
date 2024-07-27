@@ -1,4 +1,12 @@
 {
   "name": "ricapi",
-  "packageManager": "yarn@4.2.2"
+  "packageManager": "yarn@4.2.2",
+  "scripts": {
+    "test": "ts-node ./test/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
 }
