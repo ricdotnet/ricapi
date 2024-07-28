@@ -12,6 +12,7 @@
 #!.yarn/cache
 .pnp.*
 
+dist
 node_modules
 
 # env files

@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from "http";
 
 type Headers = Map<string, string | string[]>;
 
-export class Context<RequestBody> {
+export class Context<RequestBody = any, ResponseBody = any> {
   private _request: IncomingMessage;
   private _response: ServerResponse;
 
@@ -21,12 +21,12 @@ export class Context<RequestBody> {
   }
 
   // the raw request should be available here... just in case it is needed
-  get request(): IncomingMessage {
+  get __request(): IncomingMessage {
     return this._request;
   }
 
   // the raw response should be available here... just in case it is needed
-  get response(): ServerResponse {
+  get __response(): ServerResponse {
     return this._response;
   }
 
@@ -41,7 +41,7 @@ export class Context<RequestBody> {
   }
 
   setHeader(header: string, value: string | number | string[]) {
-    this.response.setHeader(header, value);
+    this._response.setHeader(header, value);
   }
 
   // TODO: parse the request body into json or form-type... depending on the content-type header
@@ -49,5 +49,17 @@ export class Context<RequestBody> {
 
   body(): RequestBody {
     return {} as RequestBody;
+  }
+
+  response(data: ResponseBody, statusCode: number = 200) {
+    const buffer = Buffer.from(JSON.stringify(data));
+    
+    this._response.setHeader('content-length', buffer.length);
+    this._response.writeHead(statusCode);
+    this._response.write(buffer);
+  }
+
+  send() {
+    this._response.end();
   }
 }

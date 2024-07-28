@@ -4,8 +4,8 @@ import { handler } from './router/handler';
 import { Context } from './router/context';
 import { HttpMethod } from './router/HttpMethod';
 
-type RouteHandler = (context: Context<any>) => any;
-type RouteDefinition = <T = any | Error>(path: string, handler: (context: Context<any>) => T) => IRicApi;
+type RouteHandler = (context: Context) => any;
+type RouteDefinition = (path: string, handler: (context: Context) => (void | Error) | Promise<void | Error>) => IRicApi;
 
 interface IRicApi {
   get: RouteDefinition;
@@ -14,13 +14,13 @@ interface IRicApi {
   patch: RouteDefinition;
   delete: RouteDefinition;
   options: RouteDefinition;
-  notFound: any; // TODO: handle this
+  notFound: (cb: (context: Context) => void) => IRicApi; // TODO: handle this
   start: (port: number, cb?: (() => void)) => void;
 }
 
 const routes: Map<string, RouteHandler> = new Map();
 
-const routeDefinitionHandler = (method: HttpMethod) => <T = any | Error>(path: string, handler: (context: Context<any>) => T) => {
+const routeDefinitionHandler = (method: HttpMethod) => (path: string, handler: (context: Context) => (void | Error) | Promise<void | Error>) => {
   const matcher = method + path;
 
   if (routes.has(matcher)) {
@@ -41,10 +41,10 @@ const routeDefinitions: IRicApi = {
   patch: routeDefinitionHandler(HttpMethod.PATCH),
   delete: routeDefinitionHandler(HttpMethod.DELETE),
   options: routeDefinitionHandler(HttpMethod.OPTIONS),
-  notFound: () => {
-    // TODO: route not found handler
-    // this will be good to set custom templates / responses for a 404
-    // if not set we'll just return an empty 404
+  notFound: (cb: (context: Context) => void) => {
+    routes.set('__404__', cb);
+
+    return routeDefinitions;
   },
   start: (port: number, cb) => {
     const server = createServer();

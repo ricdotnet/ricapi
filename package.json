@@ -1,7 +1,8 @@
 {
-  "name": "ricapi",
+  "name": "@ricdotnet/api",
   "packageManager": "yarn@4.2.2",
   "scripts": {
+    "build": "tsc",
     "test": "ts-node ./test/index.ts"
   },
   "devDependencies": {

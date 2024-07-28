@@ -38,6 +38,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ricdotnet/api@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@ricdotnet/api@workspace:."
+  dependencies:
+    "@types/node": "npm:^20.14.12"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.5.4"
+  languageName: unknown
+  linkType: soft
+
 "@tsconfig/node10@npm:^1.0.7":
   version: 1.0.11
   resolution: "@tsconfig/node10@npm:1.0.11"
@@ -120,16 +130,6 @@ __metadata:
   checksum: 10c0/171e458d86854c6b3fc46610cfacf0b45149ba043782558c6875d9f42f222124384ad0b468c92e996d815a8a2003817a710c0a160e49c1c394626f76fa45396f
   languageName: node
   linkType: hard
-
-"ricapi@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "ricapi@workspace:."
-  dependencies:
-    "@types/node": "npm:^20.14.12"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.5.4"
-  languageName: unknown
-  linkType: soft
 
 "ts-node@npm:^10.9.2":
   version: 10.9.2

@@ -1,4 +1,6 @@
 import { IncomingMessage, ServerResponse } from "http";
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { routes } from "..";
 import { Context } from "./context";
 import { Error } from "../errors";
@@ -11,7 +13,22 @@ export async function handler(incommingMessage: IncomingMessage, serverResponse:
   const matcher = method + url;
   const _routeHandler = routes.get(matcher);
 
-  if (!_routeHandler) return serverResponse.end(); // TODO: handle a 404
+  // TODO: make it handle with the custom handler
+  if (!_routeHandler) {
+    const _404Handler = routes.get('__404__');
+    
+    if (_404Handler) {
+      _404Handler(new Context(incommingMessage, serverResponse));
+      return;      
+    }
+
+    const _404View = await fs.readFile(path.join(process.cwd(), 'src', 'views', '404.html'), 'utf8');
+
+    serverResponse.writeHead(404, { 'content-type': 'text/html' });
+    serverResponse.end(_404View);
+
+    return;
+  }
 
   const response = await _routeHandler(new Context(incommingMessage, serverResponse));
 
