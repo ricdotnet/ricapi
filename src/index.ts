@@ -1,7 +1,7 @@
 import { createServer } from 'http';
 import { Error } from './errors';
 import { handler } from './router/handler';
-import { Context } from './router/context';
+import type { Context } from './router/context';
 import { HttpMethod } from './router/HttpMethod';
 
 type RouteHandler = (context: Context) => any;
@@ -63,7 +63,5 @@ function RicApi(): IRicApi {
 
 export {
   RicApi,
-  routes,
   Context,
 }
-
