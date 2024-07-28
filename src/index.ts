@@ -64,5 +64,6 @@ function RicApi(): IRicApi {
 export {
   RicApi,
   routes,
+  Context,
 }
 
