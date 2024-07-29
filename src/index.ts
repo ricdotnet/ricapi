@@ -6,6 +6,9 @@ import type { RouteHandler, IRicApi, RouteMap, RouteInterface } from './types';
 
 const routes: RouteMap = new Map();
 
+// when registering handlers, if we set an array with 1 that will be the route handler...
+// if we set an array with 2, the first one will be a middleware and the second one will be the handler
+// if we set an array with more than 2, the first ones will be middlewares and the last one will be the handler
 function routeDefinitionHandler(method: HttpMethod): (path: string, handlers: RouteHandler | RouteHandler[]) => IRicApi;
 function routeDefinitionHandler(method: HttpMethod) {
   return (path: string, handlers: RouteHandler | RouteHandler[]) => {
