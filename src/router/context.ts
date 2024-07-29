@@ -2,11 +2,13 @@ import { IncomingMessage, ServerResponse } from "http";
 
 type Headers = Map<string, string | string[]>;
 
-export class Context<RequestBody = any, ResponseBody = any> {
+export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
   private _request: IncomingMessage;
   private _response: ServerResponse;
 
   private _headers: Headers = new Map();
+  
+  private _data: ContextData = {} as ContextData;
 
   constructor(request: IncomingMessage, response: ServerResponse) {
     this._request = request;
@@ -18,6 +20,10 @@ export class Context<RequestBody = any, ResponseBody = any> {
         this._headers.set(key, header);
       }
     });
+  }
+  
+  get data(): ContextData {
+    return this._data;
   }
 
   // the raw request should be available here... just in case it is needed

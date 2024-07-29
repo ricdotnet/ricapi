@@ -13,26 +13,22 @@ interface WorldResponse {
   country: string;
 }
 
-RicApi()
-  .get('/hello', async (ctx: Context<WorldResponse, HelloResponse>) => {
+const helloMiddleware = async (ctx: Context<WorldResponse, HelloResponse>) => {
+  console.log('Hello middleware');
+  ctx.data.age = 30;
+  ctx.data.country = 'Portugal';
   
-    await sleep();
+  await sleep(5000);
+};
 
-    // ctx.__response.write('/hello route');
-    // ctx.__response.end();
+const helloHandler = async (ctx: Context<WorldResponse, HelloResponse>) => {
+  console.log(ctx.data);
+  
+  ctx.setHeader('content-type', 'application/json');
+  ctx.response(ctx.data);
+  ctx.send();
+};
 
-    ctx.setHeader('content-type', 'application/json');
-    ctx.response({ name: 'Ricardo', surname: 'Rocha'});
-    ctx.send();
-  })
-  .get('/world', (ctx: Context) => {
-
-    ctx.__response.write('/world route');
-    ctx.__response.end();
-  })
-  .notFound((ctx: Context) => {
-    ctx.setHeader('content-type', 'application/json');
-    ctx.response({ status: 400, error: 'Not found' }, 404);
-    ctx.send();
-  })
+RicApi()
+  .get('/hello', [helloMiddleware, helloHandler])
   .start(3000);
