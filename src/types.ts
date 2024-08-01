@@ -1,4 +1,5 @@
 import type { Context } from './router/context';
+import { Error } from './errors';
 
 export type RouteHandler = (context: Context) => (void | Error) | Promise<void | Error>;
 export type RouteDefinition = (path: string, handlers: RouteHandler | RouteHandler[]) => IRicApi;

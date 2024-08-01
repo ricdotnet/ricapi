@@ -1,5 +1,4 @@
-import { RicApi } from '../src';
-import { Context } from '../src/router/context';
+import { RicApi, Context } from '../src';
 
 const sleep = (ms = 1000) => new Promise(res => setTimeout(res, ms));
 
@@ -15,17 +14,13 @@ interface WorldResponse {
 
 const helloMiddleware = async (ctx: Context<WorldResponse, HelloResponse>) => {
   console.log('Hello middleware');
-  ctx.data.age = 30;
-  ctx.data.country = 'Portugal';
-  
-  await sleep(5000);
 };
 
 const helloHandler = async (ctx: Context<WorldResponse, HelloResponse>) => {
-  console.log(ctx.data);
-  
+  console.log(ctx.body());
+
   ctx.setHeader('content-type', 'application/json');
-  ctx.response(ctx.data);
+  ctx.response({ name: 'John', surname: 'Doe' });
   ctx.send();
 };
 

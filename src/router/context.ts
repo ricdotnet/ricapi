@@ -3,11 +3,12 @@ import { IncomingMessage, ServerResponse } from "http";
 type Headers = Map<string, string | string[]>;
 
 export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
-  private _request: IncomingMessage;
-  private _response: ServerResponse;
+  private readonly _request: IncomingMessage;
+  private readonly _response: ServerResponse;
 
   private _headers: Headers = new Map();
-  
+
+  private _body: RequestBody = {} as RequestBody;
   private _data: ContextData = {} as ContextData;
 
   constructor(request: IncomingMessage, response: ServerResponse) {
@@ -21,7 +22,7 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
       }
     });
   }
-  
+
   get data(): ContextData {
     return this._data;
   }
@@ -53,13 +54,17 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
   // TODO: parse the request body into json or form-type... depending on the content-type header
   // also maybe it would be good to define the request body interface on the route definition?
 
+  setBody(body: RequestBody) {
+    this._body = body;
+  }
+
   body(): RequestBody {
-    return {} as RequestBody;
+    return this._body;
   }
 
   response(data: ResponseBody, statusCode: number = 200) {
     const buffer = Buffer.from(JSON.stringify(data));
-    
+
     this._response.setHeader('content-length', buffer.length);
     this._response.writeHead(statusCode);
     this._response.write(buffer);
