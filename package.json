@@ -3,7 +3,7 @@
   "name": "@ricdotnet/api",
   "packageManager": "yarn@4.2.2",
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf ./dist && tsc",
     "test": "ts-node ./test/index.ts"
   },
   "devDependencies": {
