@@ -3,7 +3,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { Context } from "./context";
 import { Error } from "../errors";
-import { RouteInterface, RouteMap } from "../types";
+import { RouteInterface, Route } from "../types";
 
 class BodyParser {
   private context: Context;
@@ -30,19 +30,64 @@ class BodyParser {
   }
 }
 
+function findMatch(pathParts: string[], routes: Route[], context: Context): Route | void {
+  let match = null;
+
+  for (let part of pathParts) {
+    match = routes.find(r => {
+      if (r.path.startsWith(':')) {
+        const hasExact = routes.find(r => r.path === part);
+        if (hasExact) {
+          return true;
+        }
+        
+        context.setParam(r.path.slice(1), part);
+        return true;
+      }
+      return r.path === part;
+    });
+    if (match) {
+      break;
+    }
+  }
+  
+  if (!match) {
+    return;
+  }
+
+  if (pathParts.length === 1) {
+    return match;
+  }
+
+  pathParts.shift(); // pop the current parent
+  return findMatch(pathParts, match.children, context);
+}
+
 // TODO: implement a better route matcher that would include custom params
-export function handler(routes: RouteMap) {
+export function handler(routes: Route[]) {
   return async (incomingMessage: IncomingMessage, serverResponse: ServerResponse) => {
     if (!incomingMessage.url) return serverResponse.end(); // TODO: handle
 
     const { method, url, headers } = incomingMessage;
-    const matcher = method + url;
-    const routeInterface = routes.get(matcher);
-
-    const contentType = headers['content-type'];
+    
+    if (url === '/routes') {
+      serverResponse.writeHead(200, { 'content-type': 'application/json' });
+      serverResponse.write(JSON.stringify(routes));
+      return serverResponse.end();
+    }
 
     // generate a context
     const context = new Context(incomingMessage, serverResponse);
+    
+    const pathParts = url.split('/').filter(Boolean);
+    const route: Route | void = findMatch(pathParts, routes, context);
+    
+    if (!route || !route.handler) {
+      serverResponse.writeHead(404, { 'content-type': 'text/plain' });
+      return serverResponse.end(); // TODO: handle
+    }
+
+    const contentType = headers['content-type'];
 
     const bodyParser = new BodyParser(context);
     await bodyParser.read(incomingMessage);
@@ -51,18 +96,14 @@ export function handler(routes: RouteMap) {
       context.setBody(bodyParser.toJson());
     }
 
-    // TODO: make it handle with the custom handler
-    if (!routeInterface) {
-      return _404Handler(routes.get('__404__'), context);
-    }
-
-    if (routeInterface.middlewares) {
-      for (const middleware of routeInterface.middlewares) {
+    // run middlewares if there is any
+    if (route.middlewares && route.middlewares.length) {
+      for (const middleware of route.middlewares) {
         await middleware(context);
       }
     }
 
-    const response = await routeInterface.handler(context);
+    const response = await route.handler(context);
 
     if (response instanceof Error) {
       context.__response.writeHead(response.statusCode, response.message, { 'Content-Type': 'application/json' });

@@ -2,9 +2,48 @@ import { createServer } from 'http';
 import { handler } from './router/handler';
 import type { Context } from './router/context';
 import { HttpMethod } from './router/HttpMethod';
-import type { RouteHandler, IRicApi, RouteMap, RouteInterface } from './types';
+import type { RouteHandler, IRicApi, Route, RouteInterface } from './types';
 
-const routes: RouteMap = new Map();
+// const routes: RouteMap = new Map();
+const routes: Route[] = new Array();
+
+// function addRoute(path: string, handler: any, _routes = routes) {
+function addRoute(path: string, _routes = routes): Route | void {
+  const parts = path.split('/').filter(Boolean);
+  
+  console.log(path);
+  
+  let parent = _routes.find(r => {
+    if (r.path.startsWith(':')) {
+      // match exact first
+      const hasExact = _routes.find(r => r.path === parts[0]);
+      if (hasExact) {
+        return true;
+      }
+
+      return true;
+    }
+
+    return r.path === parts[0];
+  });
+
+  if (!parent) {
+    parent = {
+      method: HttpMethod.GET, // set get by default
+      path: parts[0],
+      children: [],
+      handler: null,
+    };
+  }
+  
+  if (parts.length === 1) {
+    _routes.push(parent);
+    return parent;
+  }
+  
+  parts.shift(); // pop the current parent
+  return addRoute(parts.join('/'), parent.children);
+}
 
 // when registering handlers, if we set an array with 1 that will be the route handler...
 // if we set an array with 2, the first one will be a middleware and the second one will be the handler
@@ -12,12 +51,7 @@ const routes: RouteMap = new Map();
 function routeDefinitionHandler(method: HttpMethod): (path: string, handlers: RouteHandler | RouteHandler[]) => IRicApi;
 function routeDefinitionHandler(method: HttpMethod) {
   return (path: string, handlers: RouteHandler | RouteHandler[]) => {
-    const matcher = method + path;
-
-    if (routes.has(matcher)) {
-      console.warn(`You have conflicting routes. The "${path}" route is already registered.`);
-      return routeDefinitions;
-    }
+    const route = addRoute(path) as Route;
     
     let middlewares: RouteHandler[] | undefined;
     let handler: RouteHandler | undefined;
@@ -36,14 +70,15 @@ function routeDefinitionHandler(method: HttpMethod) {
     if (!handler) {
       throw new Error('No handler provided for the route.');
     }
-    
-    const routeInterface: RouteInterface = {
-      middlewares,
-      handler,
+
+    // we have GET by default
+    if (method !== HttpMethod.GET) {
+      route.method = method;
     }
 
-    console.log(`Registering ${matcher} route.`);
-    routes.set(matcher, routeInterface);
+    console.log(`Registering ${method}${path} route.`);
+    route.handler = handler;
+    route.middlewares = middlewares;
 
     return routeDefinitions;
   }
@@ -63,7 +98,7 @@ const routeDefinitions: IRicApi = {
   delete: routeDefinitionHandler(HttpMethod.DELETE),
   options: routeDefinitionHandler(HttpMethod.OPTIONS),
   notFound: (cb: (context: Context) => void) => {
-    routes.set('__404__', { handler: cb });
+    // routes.set('__404__', { handler: cb });
 
     return routeDefinitions;
   },

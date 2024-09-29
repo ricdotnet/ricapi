@@ -25,5 +25,40 @@ const helloHandler = async (ctx: Context<WorldResponse, HelloResponse>) => {
 };
 
 RicApi()
-  .get('/hello', [helloMiddleware, helloHandler])
+  // .get('/hello', [helloMiddleware, helloHandler])
+  // .get('/hello/world', (ctx: Context) => {
+  //   console.log('Hello world');
+    
+  //   ctx.setHeader('content-type', 'application/json');
+  //   ctx.response({ age: 25, country: 'PT' });
+  //   ctx.send();
+  // })
+  // .get('/hello/world/:id', (ctx: Context) => {
+  //   console.log('Hello world with id');
+    
+  //   const id = ctx.getParam('id');
+    
+  //   ctx.setHeader('content-type', 'application/json');
+  //   ctx.response({ id });
+  //   ctx.send();
+  // })
+  // .get('/hello/world/:id/:name', (ctx: Context) => {
+  //   console.log('Hello world with id and name');
+    
+  //   const id = ctx.getParam('id');
+  //   const name = ctx.getParam('name');
+    
+  //   ctx.setHeader('content-type', 'application/json');
+  //   ctx.response({ id, name });
+  //   ctx.send();
+  // })
+  .get('/:slug/world', (ctx: Context) => {
+    console.log('Hello world with slug');
+    
+    const slug = ctx.getParam('slug');
+    
+    ctx.setHeader('content-type', 'application/json');
+    ctx.response({ slug });
+    ctx.send();
+  })
   .start(3000);

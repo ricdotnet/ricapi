@@ -10,6 +10,7 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
 
   private _body: RequestBody = {} as RequestBody;
   private _data: ContextData = {} as ContextData;
+  private _params: any = {} = {};
 
   constructor(request: IncomingMessage, response: ServerResponse) {
     this._request = request;
@@ -35,6 +36,21 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
   // the raw response should be available here... just in case it is needed
   get __response(): ServerResponse {
     return this._response;
+  }
+
+  // set a specific custom url param
+  setParam(key: string, value: any) {
+    this._params[key] = value;
+  }
+  
+  // get all the params
+  getParams(): any {
+    return this._params;
+  }
+  
+  // get a specific param... or undefined
+  getParam(param: string): any {
+    return this._params[param];
   }
 
   // get all the headers of a request
