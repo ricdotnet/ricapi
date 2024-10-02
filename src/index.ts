@@ -4,45 +4,42 @@ import type { Context } from './router/context';
 import { HttpMethod } from './router/HttpMethod';
 import type { RouteHandler, IRicApi, Route, RouteInterface } from './types';
 
-// const routes: RouteMap = new Map();
-const routes: Route[] = new Array();
+const routes: Route[] = [];
 
 // function addRoute(path: string, handler: any, _routes = routes) {
-function addRoute(path: string, _routes = routes): Route | void {
+function addRoute(path: string, method: HttpMethod, _routes = routes) {
   const parts = path.split('/').filter(Boolean);
-  
-  console.log(path);
-  
-  let parent = _routes.find(r => {
-    if (r.path.startsWith(':')) {
-      // match exact first
-      const hasExact = _routes.find(r => r.path === parts[0]);
-      if (hasExact) {
-        return true;
-      }
+  const isLastPart = parts.length === 1;
 
-      return true;
+  let match = _routes.find(r => {
+    if (isLastPart) {
+      return r.path === parts[0] && r.method === method;
     }
-
     return r.path === parts[0];
   });
 
-  if (!parent) {
-    parent = {
+  let routeDef = match;
+
+  if (!routeDef) {
+    routeDef = {
       method: HttpMethod.GET, // set get by default
       path: parts[0],
       children: [],
       handler: null,
     };
   }
-  
-  if (parts.length === 1) {
-    _routes.push(parent);
-    return parent;
+
+  if (isLastPart) {
+    _routes.push(routeDef);
+    return routeDef;
   }
-  
+
+  if (!match) {
+    _routes.push(routeDef);
+  }
+
   parts.shift(); // pop the current parent
-  return addRoute(parts.join('/'), parent.children);
+  return addRoute(parts.join('/'), method, routeDef.children);
 }
 
 // when registering handlers, if we set an array with 1 that will be the route handler...
@@ -51,22 +48,22 @@ function addRoute(path: string, _routes = routes): Route | void {
 function routeDefinitionHandler(method: HttpMethod): (path: string, handlers: RouteHandler | RouteHandler[]) => IRicApi;
 function routeDefinitionHandler(method: HttpMethod) {
   return (path: string, handlers: RouteHandler | RouteHandler[]) => {
-    const route = addRoute(path) as Route;
-    
+    const route = addRoute(path, method) as unknown as Route;
+
     let middlewares: RouteHandler[] | undefined;
     let handler: RouteHandler | undefined;
-    
+
     if (handlers instanceof Array) {
       if (!handlers.length) {
         throw new Error('You passed an array of handlers but it is empty.');
       }
-      
+
       handler = handlers.pop();
       middlewares = handlers.length ? handlers : undefined;
     } else {
       handler = handlers;
     }
-    
+
     if (!handler) {
       throw new Error('No handler provided for the route.');
     }
@@ -86,9 +83,9 @@ function routeDefinitionHandler(method: HttpMethod) {
 
 const routeDefinitions: IRicApi = {
   globalMiddlewares: (middlewares: RouteHandler[]) => {
-    
+
     // TODO: register global middlewares
-    
+
     return routeDefinitions;
   },
   get: routeDefinitionHandler(HttpMethod.GET),

@@ -1,10 +1,12 @@
 import { IncomingMessage, ServerResponse } from "http";
+import { HttpMethod } from './HttpMethod';
 
 type Headers = Map<string, string | string[]>;
 
 export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
   private readonly _request: IncomingMessage;
   private readonly _response: ServerResponse;
+  private readonly _method: keyof typeof HttpMethod;
 
   private _headers: Headers = new Map();
 
@@ -15,6 +17,7 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
   constructor(request: IncomingMessage, response: ServerResponse) {
     this._request = request;
     this._response = response;
+    this._method = <HttpMethod>request.method ?? HttpMethod.GET;
 
     Object.keys(this._request.headers).forEach((key: string) => {
       const header: string[] | string | undefined = this._request.headers[key];
@@ -22,6 +25,10 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
         this._headers.set(key, header);
       }
     });
+  }
+
+  get method(): keyof typeof HttpMethod {
+    return this._method;
   }
 
   get data(): ContextData {
@@ -42,12 +49,12 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
   setParam(key: string, value: any) {
     this._params[key] = value;
   }
-  
+
   // get all the params
   getParams(): any {
     return this._params;
   }
-  
+
   // get a specific param... or undefined
   getParam(param: string): any {
     return this._params[param];

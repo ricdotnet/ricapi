@@ -30,27 +30,49 @@ class BodyParser {
   }
 }
 
-function findMatch(pathParts: string[], routes: Route[], context: Context): Route | void {
-  let match = null;
+function findPartMatch(pathParts: string[], children: Route[], context: Context) {
+  const isLastPart = pathParts.length === 1;
+
+  if (isLastPart) {
+    console.log('pathParts', pathParts);
+    console.log('method', context.method);
+  }
 
   for (let part of pathParts) {
-    match = routes.find(r => {
-      if (r.path.startsWith(':')) {
-        const hasExact = routes.find(r => r.path === part);
-        if (hasExact) {
-          return true;
+    for (let child of children) {
+      // TODO: find out order of operations for the last part to match the method
+      if (child.path.startsWith(':')) {
+        const match = children.find(r => {
+          if (isLastPart) {
+            return r.path === part && r.method === context.method;
+          }
+          return r.path === part;
+        });
+        if (match) {
+          return match;
         }
-        
-        context.setParam(r.path.slice(1), part);
-        return true;
+
+        context.setParam(child.path.slice(1), part); // set the param
+
+        return child;
       }
-      return r.path === part;
-    });
-    if (match) {
-      break;
+
+      if (isLastPart) {
+        if (child.path === part && child.method === context.method) {
+          return child;
+        }
+      }
+
+      if (child.path === part) {
+        return child;
+      }
     }
   }
-  
+}
+
+function findMatch(pathParts: string[], children: Route[], context: Context): Route | void {
+  let match = findPartMatch(pathParts, children, context);
+
   if (!match) {
     return;
   }
@@ -69,7 +91,7 @@ export function handler(routes: Route[]) {
     if (!incomingMessage.url) return serverResponse.end(); // TODO: handle
 
     const { method, url, headers } = incomingMessage;
-    
+
     if (url === '/routes') {
       serverResponse.writeHead(200, { 'content-type': 'application/json' });
       serverResponse.write(JSON.stringify(routes));
@@ -78,10 +100,10 @@ export function handler(routes: Route[]) {
 
     // generate a context
     const context = new Context(incomingMessage, serverResponse);
-    
+
     const pathParts = url.split('/').filter(Boolean);
     const route: Route | void = findMatch(pathParts, routes, context);
-    
+
     if (!route || !route.handler) {
       serverResponse.writeHead(404, { 'content-type': 'text/plain' });
       return serverResponse.end(); // TODO: handle
