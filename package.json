@@ -4,9 +4,11 @@
   "packageManager": "yarn@4.2.2",
   "scripts": {
     "build": "rm -rf ./dist && tsc",
+    "biome" "biome check .",
     "test": "ts-node ./test/index.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.3",
     "@types/node": "^20.14.12",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
