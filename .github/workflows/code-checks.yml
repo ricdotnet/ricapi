@@ -29,5 +29,4 @@ jobs:
         yarn install
 
     - name: Run biome checks
-      working-directory: ./client
       run: yarn biome
