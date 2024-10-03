@@ -23,7 +23,9 @@ jobs:
     - run: corepack enable
 
     - name: Install dependencies
-      run: yarn install
+      run: |
+        rm yarn.lock
+        yarn install
 
     - name: Run biome checks
       working-directory: ./client
