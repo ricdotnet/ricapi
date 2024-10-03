@@ -56,16 +56,23 @@ function findPartMatch(pathParts: string[], children: Route[], context: Context)
           return match;
         }
 
-        if (child.method === context.method) {
-          context.setParam(child.path.slice(1), part); // set the param
-          return child;
+        if (isLastPart) {
+          if (child.method === context.method) {
+            context.setParam(child.path.slice(1), part); // set the param
+            return child;
+          }
+          continue;
         }
+
+        context.setParam(child.path.slice(1), part); // set the param
+        return child;
       }
 
       if (isLastPart) {
         if (child.path === part && child.method === context.method) {
           return child;
         }
+        continue;
       }
 
       if (child.path === part) {

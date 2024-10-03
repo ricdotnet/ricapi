@@ -12,17 +12,17 @@ interface WorldResponse {
   country: string;
 }
 
+const handler = (msg: string) => (ctx: Context) => {
+  ctx.setHeader('content-type', 'text/plain');
+  ctx.response(msg);
+  ctx.send();
+}
+
 RicApi()
-  .get('/post/:name', (ctx: Context) => {
-
-    ctx.setHeader('content-type', 'text/plain');
-    ctx.response('this is /post with get: ' + ctx.getParam('name'));
-    ctx.send();
-  })
-  .post('/post/:name', (ctx: Context) => {
-
-    ctx.setHeader('content-type', 'text/plain');
-    ctx.response('this is /post with post: ' + ctx.getParam('name'));
-    ctx.send();
-  })
+  .get('/site/all', handler('get all sites'))
+  .get('/site/:id', handler('get site by id'))
+  .post('/site', handler('create a site'))
+  .patch('/site/:id', handler('update a site by id'))
+  .patch('/site/:id/status', handler('update site status'))
+  .delete('/site', handler('delete site'))
   .start(3000);
