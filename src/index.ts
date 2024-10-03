@@ -1,46 +1,9 @@
-import { createServer } from 'http';
-import { handler } from './router/handler';
-import type { Context } from './router/context';
+import { createServer } from 'node:http';
 import { HttpMethod } from './router/HttpMethod';
-import type { RouteHandler, IRicApi, Route, RouteInterface } from './types';
-
-const routes: Route[] = [];
-
-// function addRoute(path: string, handler: any, _routes = routes) {
-function addRoute(path: string, method: HttpMethod, _routes = routes) {
-  const parts = path.split('/').filter(Boolean);
-  const isLastPart = parts.length === 1;
-
-  let match = _routes.find(r => {
-    if (isLastPart) {
-      return r.path === parts[0] && r.method === method;
-    }
-    return r.path === parts[0];
-  });
-
-  let routeDef = match;
-
-  if (!routeDef) {
-    routeDef = {
-      method: HttpMethod.GET, // set get by default
-      path: parts[0],
-      children: [],
-      handler: null,
-    };
-  }
-
-  if (isLastPart) {
-    _routes.push(routeDef);
-    return routeDef;
-  }
-
-  if (!match) {
-    _routes.push(routeDef);
-  }
-
-  parts.shift(); // pop the current parent
-  return addRoute(parts.join('/'), method, routeDef.children);
-}
+import type { Context } from './router/context';
+import { handler } from './router/handler';
+import { addRoute, routes } from './router/router';
+import type { IRicApi, Route, RouteHandler } from './types';
 
 // when registering handlers, if we set an array with 1 that will be the route handler...
 // if we set an array with 2, the first one will be a middleware and the second one will be the handler
@@ -53,7 +16,7 @@ function routeDefinitionHandler(method: HttpMethod) {
     let middlewares: RouteHandler[] | undefined;
     let handler: RouteHandler | undefined;
 
-    if (handlers instanceof Array) {
+    if (Array.isArray(handlers)) {
       if (!handlers.length) {
         throw new Error('You passed an array of handlers but it is empty.');
       }
@@ -78,12 +41,11 @@ function routeDefinitionHandler(method: HttpMethod) {
     route.middlewares = middlewares;
 
     return routeDefinitions;
-  }
+  };
 }
 
 const routeDefinitions: IRicApi = {
   globalMiddlewares: (middlewares: RouteHandler[]) => {
-
     // TODO: register global middlewares
 
     return routeDefinitions;
@@ -104,9 +66,13 @@ const routeDefinitions: IRicApi = {
 
     server.on('request', handler(routes));
 
-    server.listen(port, cb ?? (() => {
-      console.log(`RicApi listening on http://localhost:${port}`)
-    }));
+    server.listen(
+      port,
+      cb ??
+        (() => {
+          console.log(`RicApi listening on http://localhost:${port}`);
+        }),
+    );
   },
 };
 
@@ -114,7 +80,4 @@ function RicApi(): IRicApi {
   return routeDefinitions;
 }
 
-export {
-  RicApi,
-  Context,
-}
+export { RicApi, type Context };

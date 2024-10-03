@@ -1,3 +1,2 @@
-export { Error } from './error';
+export { RicApiError } from './error';
 export { HttpStatusCode } from './HttpStatusCodes';
-

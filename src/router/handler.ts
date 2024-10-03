@@ -1,9 +1,10 @@
-import { IncomingMessage, ServerResponse } from "http";
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { Context } from "./context";
-import { Error } from "../errors";
-import { RouteInterface, Route } from "../types";
+import * as fs from 'node:fs/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import * as path from 'node:path';
+import { RicApiError } from '../errors';
+import type { Route, RouteInterface } from '../types';
+import { Context } from './context';
+import { findMatch } from './router';
 
 class BodyParser {
   private context: Context;
@@ -30,61 +31,6 @@ class BodyParser {
   }
 }
 
-function findPartMatch(pathParts: string[], children: Route[], context: Context) {
-  const isLastPart = pathParts.length === 1;
-
-  if (isLastPart) {
-    console.log('pathParts', pathParts);
-    console.log('method', context.method);
-  }
-
-  for (let part of pathParts) {
-    for (let child of children) {
-      // TODO: find out order of operations for the last part to match the method
-      if (child.path.startsWith(':')) {
-        const match = children.find(r => {
-          if (isLastPart) {
-            return r.path === part && r.method === context.method;
-          }
-          return r.path === part;
-        });
-        if (match) {
-          return match;
-        }
-
-        context.setParam(child.path.slice(1), part); // set the param
-
-        return child;
-      }
-
-      if (isLastPart) {
-        if (child.path === part && child.method === context.method) {
-          return child;
-        }
-      }
-
-      if (child.path === part) {
-        return child;
-      }
-    }
-  }
-}
-
-function findMatch(pathParts: string[], children: Route[], context: Context): Route | void {
-  let match = findPartMatch(pathParts, children, context);
-
-  if (!match) {
-    return;
-  }
-
-  if (pathParts.length === 1) {
-    return match;
-  }
-
-  pathParts.shift(); // pop the current parent
-  return findMatch(pathParts, match.children, context);
-}
-
 // TODO: implement a better route matcher that would include custom params
 export function handler(routes: Route[]) {
   return async (incomingMessage: IncomingMessage, serverResponse: ServerResponse) => {
@@ -102,7 +48,7 @@ export function handler(routes: Route[]) {
     const context = new Context(incomingMessage, serverResponse);
 
     const pathParts = url.split('/').filter(Boolean);
-    const route: Route | void = findMatch(pathParts, routes, context);
+    const route: Route | undefined = findMatch(pathParts, routes, context);
 
     if (!route || !route.handler) {
       serverResponse.writeHead(404, { 'content-type': 'text/plain' });
@@ -114,12 +60,12 @@ export function handler(routes: Route[]) {
     const bodyParser = new BodyParser(context);
     await bodyParser.read(incomingMessage);
 
-    if (contentType && contentType.includes('json')) {
+    if (contentType?.includes('json')) {
       context.setBody(bodyParser.toJson());
     }
 
     // run middlewares if there is any
-    if (route.middlewares && route.middlewares.length) {
+    if (route.middlewares?.length) {
       for (const middleware of route.middlewares) {
         await middleware(context);
       }
@@ -127,7 +73,7 @@ export function handler(routes: Route[]) {
 
     const response = await route.handler(context);
 
-    if (response instanceof Error) {
+    if (response instanceof RicApiError) {
       context.__response.writeHead(response.statusCode, response.message, { 'Content-Type': 'application/json' });
       context.__response.end();
       return;
@@ -140,7 +86,7 @@ export function handler(routes: Route[]) {
     context.__response.writeHead(200, { 'Content-Type': 'text/plain' });
     context.__response.write('returned in the handler');
     context.__response.end();
-  }
+  };
 }
 
 async function _404Handler(routeInterface: RouteInterface | undefined, context: Context) {
