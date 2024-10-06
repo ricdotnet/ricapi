@@ -1,7 +1,7 @@
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { expect, test, vi } from 'vitest';
-import type { RicApiError } from '../errors';
 import { HttpMethod } from './HttpMethod';
-import type { Context } from './context';
+import { Context } from './context';
 import { addRoute, findMatch, routes } from './router';
 
 const handler = (ctx: Context) => {};
@@ -49,4 +49,63 @@ test('should call the correct route handler', () => {
 
   expect(homeHandlerMock).toHaveBeenCalled();
   expect(homeHandlerMock).toHaveBeenCalledTimes(1);
+});
+
+test('should call the correct route handler with params', () => {
+  const homeIdHandlerMock = vi.fn(() => {});
+  const homeAllHandlerMock = vi.fn(() => {});
+
+  addRoute('/home/:id', homeIdHandlerMock, HttpMethod.GET, routes);
+  addRoute('/home/all', homeAllHandlerMock, HttpMethod.GET, routes);
+  const route = findMatch('home/1'.split('/'), routes, new Context({} as IncomingMessage, {} as ServerResponse));
+
+  expect(route).toBeDefined();
+
+  // biome-ignore lint/style/noNonNullAssertion: We will always have a route with a handler here
+  route!.handler[HttpMethod.GET]!({} as Context);
+
+  expect(homeIdHandlerMock).toHaveBeenCalled();
+  expect(homeIdHandlerMock).toHaveBeenCalledTimes(1);
+  expect(homeAllHandlerMock).not.toHaveBeenCalled();
+  expect(homeAllHandlerMock).toHaveBeenCalledTimes(0);
+});
+
+test('should have all route params in the context', () => {
+  const userIdHandlerMock = vi.fn(() => {});
+
+  const context = new Context({} as IncomingMessage, {} as ServerResponse);
+
+  addRoute('/user/:id/:type', userIdHandlerMock, HttpMethod.GET, routes);
+  const route = findMatch('user/1/admin'.split('/'), routes, context);
+
+  expect(route).toBeDefined();
+
+  // biome-ignore lint/style/noNonNullAssertion: We will always have a route with a handler here
+  route!.handler[HttpMethod.GET]!(context);
+
+  expect(userIdHandlerMock).toHaveBeenCalled();
+  expect(userIdHandlerMock).toHaveBeenCalledTimes(1);
+  expect(context.getParam('id')).toEqual('1');
+  expect(context.getParam('type')).toEqual('admin');
+});
+
+test('should call the correct route handler with the correct method', () => {
+  const homeHandlerGetMock = vi.fn(() => {});
+  const homeHandlerPostMock = vi.fn(() => {});
+
+  const methodToCall = HttpMethod.POST;
+
+  addRoute('/home', homeHandlerGetMock, HttpMethod.GET, routes);
+  addRoute('/home', homeHandlerPostMock, methodToCall, routes);
+  const route = findMatch('home'.split('/'), routes, {} as Context);
+
+  expect(route).toBeDefined();
+
+  // biome-ignore lint/style/noNonNullAssertion: We will always have a route with a handler here
+  route!.handler[methodToCall]!({} as Context);
+
+  expect(homeHandlerGetMock).not.toHaveBeenCalled();
+  expect(homeHandlerGetMock).toHaveBeenCalledTimes(0);
+  expect(homeHandlerPostMock).toHaveBeenCalled();
+  expect(homeHandlerPostMock).toHaveBeenCalledTimes(1);
 });
