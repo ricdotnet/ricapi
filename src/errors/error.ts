@@ -1,9 +1,10 @@
-export class Error {
-  private _statusCode: number;
-  private _message: string;
-  private _data: any;
+export class RicApiError extends Error {
+  private readonly _statusCode: number;
+  private readonly _message: string;
+  private readonly _data: unknown;
 
-  constructor(statusCode: number, message: string, data?: any) {
+  constructor(statusCode: number, message: string, data?: unknown) {
+    super(message);
     this._statusCode = statusCode;
     this._message = message;
 

@@ -12,18 +12,22 @@ interface WorldResponse {
   country: string;
 }
 
-const helloMiddleware = async (ctx: Context<WorldResponse, HelloResponse>) => {
-  console.log('Hello middleware');
-};
-
-const helloHandler = async (ctx: Context<WorldResponse, HelloResponse>) => {
-  console.log(ctx.body());
-
-  ctx.setHeader('content-type', 'application/json');
-  ctx.response({ name: 'John', surname: 'Doe' });
+const handler = (msg: string) => (ctx: Context) => {
+  ctx.setHeader('content-type', 'text/plain');
+  ctx.response(msg);
   ctx.send();
-};
+}
 
 RicApi()
-  .get('/hello', [helloMiddleware, helloHandler])
+  .get('/site/all', handler('get all sites'))
+  .get('/site/:id', handler('get site by id'))
+  .post('/site', handler('create a site'))
+  .patch('/site/:id', handler('update a site by id'))
+  .patch('/site/:id/status', handler('update site status'))
+  .delete('/site', handler('delete site'))
+  .notFound((ctx: Context) => {
+    ctx.setHeader('content-type', 'text/plain');
+    ctx.response('Route not found', 404);
+    ctx.send();
+  })
   .start(3000);

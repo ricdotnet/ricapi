@@ -5,12 +5,14 @@
   "scripts": {
     "build": "rm -rf ./dist && tsc",
     "biome": "biome check .",
-    "test": "ts-node ./test/index.ts"
+    "test": "NODE_ENV=test && vitest",
+    "test:live": "NODE_ENV=development && ts-node ./test/index.ts"
   },
   "devDependencies": {
-    "@types/node": "^20.14.12",
     "@biomejs/biome": "^1.9.3",
+    "@types/node": "^20.14.12",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.2"
   }
 }

@@ -1,13 +1,21 @@
+import type { RicApiError } from './errors';
+import type { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
-import { Error } from './errors';
 
-export type RouteHandler = (context: Context) => (void | Error) | Promise<void | Error>;
-export type RouteDefinition = (path: string, handlers: RouteHandler | RouteHandler[]) => IRicApi;
+export type RouteHandler = { [key in keyof typeof HttpMethod]?: RouteHandlerFunction };
+// biome-ignore lint/suspicious/noConfusingVoidType: we can return a RicApiError or nothing at all
+export type RouteHandlerFunction = (context: Context) => (void | RicApiError) | Promise<void | RicApiError>;
+export type RouteDefinition = (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;
 
-export type RouteMap = Map<string, RouteInterface>;
+export type Route = {
+  path: string;
+  handler: RouteHandler;
+  children: Route[];
+  middlewares?: RouteHandlerFunction[];
+};
 
 export interface RouteInterface {
-  middlewares?: RouteHandler[];
+  middlewares?: RouteHandlerFunction[];
   handler: RouteHandler;
 }
 
@@ -20,5 +28,5 @@ export interface IRicApi {
   delete: RouteDefinition;
   options: RouteDefinition;
   notFound: (cb: (context: Context) => void) => IRicApi; // TODO: handle this
-  start: (port: number, cb?: (() => void)) => void;
+  start: (port: number, cb?: () => void) => void;
 }

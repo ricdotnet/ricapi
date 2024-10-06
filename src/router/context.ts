@@ -1,26 +1,33 @@
-import { IncomingMessage, ServerResponse } from "http";
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { HttpMethod } from './HttpMethod';
 
 type Headers = Map<string, string | string[]>;
 
-export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
+export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData = unknown> {
   private readonly _request: IncomingMessage;
   private readonly _response: ServerResponse;
+  private readonly _method: keyof typeof HttpMethod;
 
   private _headers: Headers = new Map();
 
   private _body: RequestBody = {} as RequestBody;
   private _data: ContextData = {} as ContextData;
+  private _params: { [key: string]: string | number } = {};
 
   constructor(request: IncomingMessage, response: ServerResponse) {
     this._request = request;
     this._response = response;
+    this._method = <HttpMethod>request.method ?? HttpMethod.GET;
 
-    Object.keys(this._request.headers).forEach((key: string) => {
-      const header: string[] | string | undefined = this._request.headers[key];
-      if (header) {
-        this._headers.set(key, header);
+    for (const header in request.headers) {
+      if (request.headers[header]) {
+        this._headers.set(header, request.headers[header]);
       }
-    });
+    }
+  }
+
+  get method(): keyof typeof HttpMethod {
+    return this._method;
   }
 
   get data(): ContextData {
@@ -35,6 +42,21 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
   // the raw response should be available here... just in case it is needed
   get __response(): ServerResponse {
     return this._response;
+  }
+
+  // set a specific custom url param
+  setParam(key: string, value: string | number) {
+    this._params[key] = value;
+  }
+
+  // get all the params
+  getParams(): { [key: string]: string | number } {
+    return this._params;
+  }
+
+  // get a specific param... or undefined
+  getParam<T = unknown>(param: string): T {
+    return <T>this._params[param];
   }
 
   // get all the headers of a request
@@ -62,7 +84,7 @@ export class Context<RequestBody = any, ResponseBody = any, ContextData = any> {
     return this._body;
   }
 
-  response(data: ResponseBody, statusCode: number = 200) {
+  response(data: ResponseBody, statusCode = 200) {
     const buffer = Buffer.from(JSON.stringify(data));
 
     this._response.setHeader('content-length', buffer.length);

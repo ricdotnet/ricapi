@@ -1,59 +1,46 @@
-import { createServer } from 'http';
-import { handler } from './router/handler';
-import type { Context } from './router/context';
+import { createServer } from 'node:http';
 import { HttpMethod } from './router/HttpMethod';
-import type { RouteHandler, IRicApi, RouteMap, RouteInterface } from './types';
-
-const routes: RouteMap = new Map();
+import type { Context } from './router/context';
+import { handler } from './router/handler';
+import { addRoute, routes } from './router/router';
+import type { IRicApi, Route, RouteHandler, RouteHandlerFunction } from './types';
 
 // when registering handlers, if we set an array with 1 that will be the route handler...
 // if we set an array with 2, the first one will be a middleware and the second one will be the handler
 // if we set an array with more than 2, the first ones will be middlewares and the last one will be the handler
-function routeDefinitionHandler(method: HttpMethod): (path: string, handlers: RouteHandler | RouteHandler[]) => IRicApi;
+function routeDefinitionHandler(
+  method: HttpMethod,
+): (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;
 function routeDefinitionHandler(method: HttpMethod) {
-  return (path: string, handlers: RouteHandler | RouteHandler[]) => {
-    const matcher = method + path;
+  return (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => {
+    const routeHandlerFunction = Array.isArray(handlers) ? handlers[handlers.length - 1] : handlers;
 
-    if (routes.has(matcher)) {
-      console.warn(`You have conflicting routes. The "${path}" route is already registered.`);
-      return routeDefinitions;
+    if (!routeHandlerFunction) {
+      throw new Error('No handler provided for the route.');
     }
-    
-    let middlewares: RouteHandler[] | undefined;
-    let handler: RouteHandler | undefined;
-    
-    if (handlers instanceof Array) {
+
+    const route = addRoute(path, routeHandlerFunction, method) as unknown as Route;
+
+    let middlewares: RouteHandlerFunction[] | undefined;
+
+    if (Array.isArray(handlers)) {
       if (!handlers.length) {
         throw new Error('You passed an array of handlers but it is empty.');
       }
-      
-      handler = handlers.pop();
-      middlewares = handlers.length ? handlers : undefined;
-    } else {
-      handler = handlers;
-    }
-    
-    if (!handler) {
-      throw new Error('No handler provided for the route.');
-    }
-    
-    const routeInterface: RouteInterface = {
-      middlewares,
-      handler,
+
+      middlewares = handlers.length ? handlers.slice(1) : undefined;
     }
 
-    console.log(`Registering ${matcher} route.`);
-    routes.set(matcher, routeInterface);
+    route.middlewares = middlewares;
 
     return routeDefinitions;
-  }
+  };
 }
 
 const routeDefinitions: IRicApi = {
   globalMiddlewares: (middlewares: RouteHandler[]) => {
-    
     // TODO: register global middlewares
-    
+
     return routeDefinitions;
   },
   get: routeDefinitionHandler(HttpMethod.GET),
@@ -63,7 +50,13 @@ const routeDefinitions: IRicApi = {
   delete: routeDefinitionHandler(HttpMethod.DELETE),
   options: routeDefinitionHandler(HttpMethod.OPTIONS),
   notFound: (cb: (context: Context) => void) => {
-    routes.set('__404__', { handler: cb });
+    routes.push({
+      path: '__404__',
+      children: [],
+      handler: {
+        [HttpMethod.GET]: cb,
+      },
+    });
 
     return routeDefinitions;
   },
@@ -72,9 +65,13 @@ const routeDefinitions: IRicApi = {
 
     server.on('request', handler(routes));
 
-    server.listen(port, cb ?? (() => {
-      console.log(`RicApi listening on http://localhost:${port}`)
-    }));
+    server.listen(
+      port,
+      cb ??
+        (() => {
+          console.log(`RicApi listening on http://localhost:${port}`);
+        }),
+    );
   },
 };
 
@@ -82,7 +79,4 @@ function RicApi(): IRicApi {
   return routeDefinitions;
 }
 
-export {
-  RicApi,
-  Context,
-}
+export { RicApi, type Context };
