@@ -2,7 +2,8 @@ import * as fs from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import * as path from 'node:path';
 import { RicApiError } from '../errors';
-import type { Route, RouteInterface } from '../types';
+import type { Route } from '../types';
+import { HttpMethod } from './HttpMethod';
 import { Context } from './context';
 import { findMatch } from './router';
 
@@ -37,8 +38,10 @@ export function handler(routes: Route[]) {
     if (!incomingMessage.url) return serverResponse.end(); // TODO: handle
 
     const { method, url, headers } = incomingMessage;
+    const _method: HttpMethod = <HttpMethod>method ?? HttpMethod.GET;
 
     if (url === '/routes') {
+      console.log(routes);
       serverResponse.writeHead(200, { 'content-type': 'application/json' });
       serverResponse.write(JSON.stringify(routes));
       return serverResponse.end();
@@ -50,9 +53,8 @@ export function handler(routes: Route[]) {
     const pathParts = url.split('/').filter(Boolean);
     const route: Route | undefined = findMatch(pathParts, routes, context);
 
-    if (!route || !route.handler) {
-      serverResponse.writeHead(404, { 'content-type': 'text/plain' });
-      return serverResponse.end(); // TODO: handle
+    if (!route || !route.handler[_method]) {
+      return _404Handler(routes, context);
     }
 
     const contentType = headers['content-type'];
@@ -71,7 +73,9 @@ export function handler(routes: Route[]) {
       }
     }
 
-    const response = await route.handler(context);
+    console.log(`Handling ${_method} ${url}`);
+    const handlerFunction = route.handler[_method];
+    const response = await handlerFunction(context);
 
     if (response instanceof RicApiError) {
       context.__response.writeHead(response.statusCode, response.message, { 'Content-Type': 'application/json' });
@@ -89,9 +93,12 @@ export function handler(routes: Route[]) {
   };
 }
 
-async function _404Handler(routeInterface: RouteInterface | undefined, context: Context) {
-  if (routeInterface) {
-    routeInterface.handler(context);
+async function _404Handler(routes: Route[], context: Context) {
+  const route: Route | undefined = routes.find((r) => r.path === '__404__');
+
+  if (route?.handler[HttpMethod.GET]) {
+    const handlerFunction = route.handler[HttpMethod.GET];
+    await handlerFunction(context);
     return;
   }
 

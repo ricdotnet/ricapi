@@ -25,4 +25,9 @@ RicApi()
   .patch('/site/:id', handler('update a site by id'))
   .patch('/site/:id/status', handler('update site status'))
   .delete('/site', handler('delete site'))
+  .notFound((ctx: Context) => {
+    ctx.setHeader('content-type', 'text/plain');
+    ctx.response('Route not found', 404);
+    ctx.send();
+  })
   .start(3000);

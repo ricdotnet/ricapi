@@ -2,20 +2,20 @@ import type { RicApiError } from './errors';
 import type { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
 
+export type RouteHandler = { [key in keyof typeof HttpMethod]?: RouteHandlerFunction };
 // biome-ignore lint/suspicious/noConfusingVoidType: we can return a RicApiError or nothing at all
-export type RouteHandler = (context: Context) => (void | RicApiError) | Promise<void | RicApiError>;
-export type RouteDefinition = (path: string, handlers: RouteHandler | RouteHandler[]) => IRicApi;
+export type RouteHandlerFunction = (context: Context) => (void | RicApiError) | Promise<void | RicApiError>;
+export type RouteDefinition = (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;
 
 export type Route = {
-  method: HttpMethod;
   path: string;
-  handler: RouteHandler | null;
+  handler: RouteHandler;
   children: Route[];
-  middlewares?: RouteHandler[];
+  middlewares?: RouteHandlerFunction[];
 };
 
 export interface RouteInterface {
-  middlewares?: RouteHandler[];
+  middlewares?: RouteHandlerFunction[];
   handler: RouteHandler;
 }
 

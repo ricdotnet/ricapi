@@ -3,41 +3,34 @@ import { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
 import { handler } from './router/handler';
 import { addRoute, routes } from './router/router';
-import type { IRicApi, Route, RouteHandler } from './types';
+import type { IRicApi, Route, RouteHandler, RouteHandlerFunction } from './types';
 
 // when registering handlers, if we set an array with 1 that will be the route handler...
 // if we set an array with 2, the first one will be a middleware and the second one will be the handler
 // if we set an array with more than 2, the first ones will be middlewares and the last one will be the handler
-function routeDefinitionHandler(method: HttpMethod): (path: string, handlers: RouteHandler | RouteHandler[]) => IRicApi;
+function routeDefinitionHandler(
+  method: HttpMethod,
+): (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;
 function routeDefinitionHandler(method: HttpMethod) {
-  return (path: string, handlers: RouteHandler | RouteHandler[]) => {
-    const route = addRoute(path, method) as unknown as Route;
+  return (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => {
+    const routeHandlerFunction = Array.isArray(handlers) ? handlers[handlers.length - 1] : handlers;
 
-    let middlewares: RouteHandler[] | undefined;
-    let handler: RouteHandler | undefined;
+    if (!routeHandlerFunction) {
+      throw new Error('No handler provided for the route.');
+    }
+
+    const route = addRoute(path, routeHandlerFunction, method) as unknown as Route;
+
+    let middlewares: RouteHandlerFunction[] | undefined;
 
     if (Array.isArray(handlers)) {
       if (!handlers.length) {
         throw new Error('You passed an array of handlers but it is empty.');
       }
 
-      handler = handlers.pop();
-      middlewares = handlers.length ? handlers : undefined;
-    } else {
-      handler = handlers;
+      middlewares = handlers.length ? handlers.slice(1) : undefined;
     }
 
-    if (!handler) {
-      throw new Error('No handler provided for the route.');
-    }
-
-    // we have GET by default
-    if (method !== HttpMethod.GET) {
-      route.method = method;
-    }
-
-    console.log(`Registering ${method}${path} route.`);
-    route.handler = handler;
     route.middlewares = middlewares;
 
     return routeDefinitions;
@@ -57,7 +50,13 @@ const routeDefinitions: IRicApi = {
   delete: routeDefinitionHandler(HttpMethod.DELETE),
   options: routeDefinitionHandler(HttpMethod.OPTIONS),
   notFound: (cb: (context: Context) => void) => {
-    // routes.set('__404__', { handler: cb });
+    routes.push({
+      path: '__404__',
+      children: [],
+      handler: {
+        [HttpMethod.GET]: cb,
+      },
+    });
 
     return routeDefinitions;
   },

@@ -1,17 +1,14 @@
-import type { Route } from '../types';
-import { HttpMethod } from './HttpMethod';
+import type { Route, RouteHandlerFunction } from '../types';
+import type { HttpMethod } from './HttpMethod';
 import type { Context } from './context';
 
 const routes: Route[] = [];
 
-function addRoute(path: string, method: HttpMethod, _routes = routes) {
+function addRoute(path: string, handler: RouteHandlerFunction, method: HttpMethod, _routes = routes) {
   const parts = path.split('/').filter(Boolean);
   const isLastPart = parts.length === 1;
 
   const match = _routes.find((r) => {
-    if (isLastPart) {
-      return r.path === parts[0] && r.method === method;
-    }
     return r.path === parts[0];
   });
 
@@ -19,15 +16,23 @@ function addRoute(path: string, method: HttpMethod, _routes = routes) {
 
   if (!routeDef) {
     routeDef = {
-      method: HttpMethod.GET, // set get by default
       path: parts[0],
       children: [],
-      handler: null,
+      handler: {},
     };
   }
 
   if (isLastPart) {
-    _routes.push(routeDef);
+    console.log(`Registering ${method}${!path.startsWith('/') ? `/${path}` : path} route.`);
+
+    routeDef.handler = {
+      ...routeDef.handler,
+      [method]: handler,
+    };
+
+    if (!match) {
+      _routes.push(routeDef);
+    }
     return routeDef;
   }
 
@@ -36,7 +41,7 @@ function addRoute(path: string, method: HttpMethod, _routes = routes) {
   }
 
   parts.shift(); // pop the current parent
-  return addRoute(parts.join('/'), method, routeDef.children);
+  return addRoute(parts.join('/'), handler, method, routeDef.children);
 }
 
 function findPartMatch(pathParts: string[], children: Route[], context: Context) {
@@ -46,9 +51,6 @@ function findPartMatch(pathParts: string[], children: Route[], context: Context)
     for (const child of children) {
       if (child.path.startsWith(':')) {
         const match = children.find((r) => {
-          if (isLastPart) {
-            return r.path === part && r.method === context.method;
-          }
           return r.path === part;
         });
 
@@ -57,22 +59,12 @@ function findPartMatch(pathParts: string[], children: Route[], context: Context)
         }
 
         if (isLastPart) {
-          if (child.method === context.method) {
-            context.setParam(child.path.slice(1), part); // set the param
-            return child;
-          }
-          continue;
+          context.setParam(child.path.slice(1), part); // set the param
+          return child;
         }
 
         context.setParam(child.path.slice(1), part); // set the param
         return child;
-      }
-
-      if (isLastPart) {
-        if (child.path === part && child.method === context.method) {
-          return child;
-        }
-        continue;
       }
 
       if (child.path === part) {
