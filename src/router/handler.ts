@@ -8,8 +8,8 @@ import { Context } from './context';
 import { findMatch } from './router';
 
 class BodyParser {
-  private context: Context;
-  private chunks: Buffer[];
+  private readonly context: Context;
+  private readonly chunks: Buffer[];
 
   constructor(context: Context) {
     this.context = context;
@@ -28,7 +28,8 @@ class BodyParser {
   }
 
   toJson() {
-    return JSON.parse(this.chunks.join('').toString());
+    const jsonedBody = JSON.parse(this.chunks.join('').toString());
+    this.context.body = jsonedBody;
   }
 }
 
@@ -53,7 +54,7 @@ export function handler(routes: Route[]) {
     const pathParts = url.split('/').filter(Boolean);
     const route: Route | undefined = findMatch(pathParts, routes, context);
 
-    if (!route || !route.handler[_method]) {
+    if (!route?.handler[_method]) {
       return _404Handler(routes, context);
     }
 
@@ -63,7 +64,7 @@ export function handler(routes: Route[]) {
     await bodyParser.read(incomingMessage);
 
     if (contentType?.includes('json')) {
-      context.setBody(bodyParser.toJson());
+      bodyParser.toJson();
     }
 
     // run middlewares if there is any
@@ -111,6 +112,4 @@ async function _404Handler(routes: Route[], context: Context) {
 
   context.__response.writeHead(404, { 'content-type': 'text/html' });
   context.__response.end(_404View);
-
-  return;
 }

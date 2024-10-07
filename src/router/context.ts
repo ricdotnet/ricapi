@@ -8,10 +8,10 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
   private readonly _response: ServerResponse;
   private readonly _method: keyof typeof HttpMethod;
 
-  private _headers: Headers = new Map();
+  private readonly _headers: Headers = new Map();
+  private readonly _data: ContextData = {} as ContextData;
 
   private _body: RequestBody = {} as RequestBody;
-  private _data: ContextData = {} as ContextData;
   private _params: { [key: string]: string | number } = {};
 
   constructor(request: IncomingMessage, response: ServerResponse) {
@@ -26,14 +26,6 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
     }
   }
 
-  get method(): keyof typeof HttpMethod {
-    return this._method;
-  }
-
-  get data(): ContextData {
-    return this._data;
-  }
-
   // the raw request should be available here... just in case it is needed
   get __request(): IncomingMessage {
     return this._request;
@@ -44,19 +36,38 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
     return this._response;
   }
 
-  // set a specific custom url param
+  get method(): keyof typeof HttpMethod {
+    return this._method;
+  }
+
+  get data(): ContextData {
+    return this._data;
+  }
+
+  // set the request body
+  // for the response body, use the response method
+  set body(body: RequestBody) {
+    this._body = body;
+  }
+
+  // get the request body
+  get body(): RequestBody {
+    return this._body;
+  }
+
+  // attach a request url parameter to the params object
   setParam(key: string, value: string | number) {
     this._params[key] = value;
   }
 
-  // get all the params
-  getParams(): { [key: string]: string | number } {
-    return this._params;
-  }
-
-  // get a specific param... or undefined
+  // get a specific request url parameter... or undefined
   getParam<T = unknown>(param: string): T {
     return <T>this._params[param];
+  }
+
+  // get all the custom request url parameters
+  get params(): { [key: string]: string | number } {
+    return this._params;
   }
 
   // get all the headers of a request
@@ -71,17 +82,6 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
 
   setHeader(header: string, value: string | number | string[]) {
     this._response.setHeader(header, value);
-  }
-
-  // TODO: parse the request body into json or form-type... depending on the content-type header
-  // also maybe it would be good to define the request body interface on the route definition?
-
-  setBody(body: RequestBody) {
-    this._body = body;
-  }
-
-  body(): RequestBody {
-    return this._body;
   }
 
   response(data: ResponseBody, statusCode = 200) {
