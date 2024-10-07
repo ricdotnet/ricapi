@@ -87,9 +87,14 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
   response(data: ResponseBody, statusCode = 200) {
     const buffer = Buffer.from(JSON.stringify(data));
 
-    this._response.setHeader('content-length', buffer.length);
-    this._response.writeHead(statusCode);
-    this._response.write(buffer);
+    if (statusCode) {
+      this._response.statusCode = statusCode;
+    }
+
+    if (buffer.length) {
+      this._response.setHeader('content-length', buffer.length);
+      this._response.write(buffer);
+    }
   }
 
   send() {
