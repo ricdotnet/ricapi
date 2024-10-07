@@ -33,10 +33,9 @@ class BodyParser {
   }
 }
 
-// TODO: implement a better route matcher that would include custom params
 export function handler(routes: Route[]) {
   return async (incomingMessage: IncomingMessage, serverResponse: ServerResponse) => {
-    if (!incomingMessage.url) return serverResponse.end(); // TODO: handle
+    if (!incomingMessage.url) return serverResponse.end();
 
     const { method, url, headers } = incomingMessage;
     const _method: HttpMethod = <HttpMethod>method ?? HttpMethod.GET;
@@ -76,20 +75,37 @@ export function handler(routes: Route[]) {
 
     console.log(`Handling ${_method} ${url}`);
     const handlerFunction = route.handler[_method];
-    const response = await handlerFunction(context);
 
-    if (response instanceof RicApiError) {
-      context.__response.writeHead(response.statusCode, response.message, { 'Content-Type': 'application/json' });
+    try {
+      await handlerFunction(context);
+    } catch (error) {
+      if (error instanceof RicApiError) {
+        context.__response.writeHead(error.statusCode, error.message, { 'Content-Type': 'application/json' });
+        context.__response.end();
+        return;
+      }
+
+      context.__response.writeHead(500, 'Internal Server Error', { 'Content-Type': 'application/json' });
       context.__response.end();
-      return;
     }
 
     if (context.__response.writableFinished) {
       return;
     }
 
-    context.__response.writeHead(200, { 'Content-Type': 'text/plain' });
-    context.__response.write('returned in the handler');
+    context.responseHeaders.forEach((value, key) => {
+      context.__response.setHeader(key, value);
+    });
+
+    context.__response.statusCode = context.statusCode ?? 200;
+
+    if (Object.keys(<object>context.responseData).length) {
+      const buffer = Buffer.from(JSON.stringify(context.responseData));
+
+      context.__response.setHeader('content-length', buffer.length);
+      context.__response.write(buffer);
+    }
+
     context.__response.end();
   };
 }
