@@ -28,7 +28,7 @@ function routeDefinitionHandler(method: HttpMethod) {
         throw new Error('You passed an array of handlers but it is empty.');
       }
 
-      middlewares = handlers.length ? handlers.slice(1) : undefined;
+      middlewares = handlers.length ? handlers.slice(0, handlers.length - 1) : undefined;
     }
 
     route.middlewares = middlewares;

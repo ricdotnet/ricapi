@@ -6,7 +6,7 @@
     "build": "rm -rf ./dist && tsc",
     "biome": "biome check .",
     "test": "NODE_ENV=test && vitest",
-    "test:live": "NODE_ENV=development && ts-node ./test/index.ts"
+    "test:live": "NODE_ENV=development && ts-node ./test/index"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.3",

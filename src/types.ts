@@ -4,7 +4,8 @@ import type { Context } from './router/context';
 
 export type RouteHandler = { [key in keyof typeof HttpMethod]?: RouteHandlerFunction };
 export type RouteHandlerFunction = (
-  context: Context,
+  // biome-ignore lint/suspicious/noExplicitAny: generic handling...
+  context: Context<any, any, any>,
   // biome-ignore lint/suspicious/noConfusingVoidType: we can return a RicApiError or nothing at all
 ) => (void | RicApiError) | Promise<void | RicApiError>;
 export type RouteDefinition = (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;

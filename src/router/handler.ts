@@ -33,10 +33,9 @@ class BodyParser {
   }
 }
 
-// TODO: implement a better route matcher that would include custom params
 export function handler(routes: Route[]) {
   return async (incomingMessage: IncomingMessage, serverResponse: ServerResponse) => {
-    if (!incomingMessage.url) return serverResponse.end(); // TODO: handle
+    if (!incomingMessage.url) return serverResponse.end();
 
     const { method, url, headers } = incomingMessage;
     const _method: HttpMethod = <HttpMethod>method ?? HttpMethod.GET;
@@ -98,8 +97,15 @@ export function handler(routes: Route[]) {
       context.__response.setHeader(key, value);
     });
 
-    context.__response.writeHead(context.statusCode ?? 200, { 'Content-Type': 'text/plain' });
-    // context.__response.write('returned in the handler');
+    context.__response.statusCode = context.statusCode ?? 200;
+
+    if (Object.keys(<object>context.responseData).length) {
+      const buffer = Buffer.from(JSON.stringify(context.responseData));
+
+      context.__response.setHeader('content-length', buffer.length);
+      context.__response.write(buffer);
+    }
+
     context.__response.end();
   };
 }

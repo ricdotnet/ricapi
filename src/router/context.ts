@@ -9,12 +9,13 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
   private readonly _method: keyof typeof HttpMethod;
 
   private readonly _headers: Headers = new Map();
-  private readonly _data: ContextData = {} as ContextData;
 
   private _body: RequestBody = {} as RequestBody;
+  private _responseData: ResponseBody = {} as ResponseBody;
+  private _data: ContextData = {} as ContextData;
+
   private _params: { [key: string]: string | number } = {};
   private _statusCode: number | undefined;
-  private _responseData: ResponseBody = {} as ResponseBody;
 
   private readonly _responseHeaders: Headers = new Map();
 
@@ -42,10 +43,6 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
 
   get method(): keyof typeof HttpMethod {
     return this._method;
-  }
-
-  get data(): ContextData {
-    return this._data;
   }
 
   set statusCode(status: number) {
@@ -77,6 +74,20 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
     return this._responseHeaders;
   }
 
+  // set a custom context data item
+  setData(item: keyof ContextData, value: ContextData[keyof ContextData]) {
+    this._data[item] = value;
+  }
+
+  get data(): ContextData {
+    return this._data;
+  }
+
+  // get the response data
+  get responseData(): ResponseBody {
+    return this._responseData;
+  }
+
   // attach a request url parameter to the params object
   setParam(key: string, value: string | number) {
     this._params[key] = value;
@@ -102,16 +113,9 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
     this._responseHeaders.set(header, value);
   }
 
-  response(data: ResponseBody, statusCode = 200) {
-    const buffer = Buffer.from(JSON.stringify(data));
-
-    if (statusCode) {
-      this.statusCode = statusCode;
-    }
-
-    if (buffer.length) {
-      this._response.setHeader('content-length', buffer.length);
-      this._response.write(buffer);
+  response(data?: ResponseBody) {
+    if (data) {
+      this._responseData = data;
     }
   }
 
