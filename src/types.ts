@@ -3,8 +3,10 @@ import type { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
 
 export type RouteHandler = { [key in keyof typeof HttpMethod]?: RouteHandlerFunction };
-// biome-ignore lint/suspicious/noConfusingVoidType: we can return a RicApiError or nothing at all
-export type RouteHandlerFunction = (context: Context) => (void | RicApiError) | Promise<void | RicApiError>;
+export type RouteHandlerFunction = (
+  context: Context,
+  // biome-ignore lint/suspicious/noConfusingVoidType: we can return a RicApiError or nothing at all
+) => (void | RicApiError) | Promise<void | RicApiError>;
 export type RouteDefinition = (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;
 
 export type Route = {
@@ -20,6 +22,7 @@ export interface RouteInterface {
 }
 
 export interface IRicApi {
+  config?: (config: { [key: string]: string }) => IRicApi;
   globalMiddlewares?: (middlewares: RouteHandler[]) => IRicApi;
   get: RouteDefinition;
   post: RouteDefinition;

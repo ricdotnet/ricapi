@@ -34,7 +34,7 @@ RicApi()
   })
   .get('/hello', (ctx: Context<any, HelloResponse>) => {
 
-    ctx.status = 201;
+    ctx.statusCode = 201;
 
     ctx.setHeader('content-type', 'application/json');
     ctx.response({ name: 'John', surname: 'Doe' });

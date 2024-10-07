@@ -94,7 +94,11 @@ export function handler(routes: Route[]) {
       return;
     }
 
-    context.__response.writeHead(context.__response.statusCode ?? 200, { 'Content-Type': 'text/plain' });
+    context.responseHeaders.forEach((value, key) => {
+      context.__response.setHeader(key, value);
+    });
+
+    context.__response.writeHead(context.statusCode ?? 200, { 'Content-Type': 'text/plain' });
     // context.__response.write('returned in the handler');
     context.__response.end();
   };

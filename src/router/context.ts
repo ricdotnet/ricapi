@@ -13,6 +13,10 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
 
   private _body: RequestBody = {} as RequestBody;
   private _params: { [key: string]: string | number } = {};
+  private _statusCode: number | undefined;
+  private _responseData: ResponseBody = {} as ResponseBody;
+
+  private readonly _responseHeaders: Headers = new Map();
 
   constructor(request: IncomingMessage, response: ServerResponse) {
     this._request = request;
@@ -44,6 +48,14 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
     return this._data;
   }
 
+  set statusCode(status: number) {
+    this._statusCode = status;
+  }
+
+  get statusCode(): number | undefined {
+    return this._statusCode;
+  }
+
   // set the request body
   // for the response body, use the response method
   set body(body: RequestBody) {
@@ -53,6 +65,16 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
   // get the request body
   get body(): RequestBody {
     return this._body;
+  }
+
+  // get all the request headers
+  get headers(): Headers {
+    return this._headers;
+  }
+
+  // get all the response headers
+  get responseHeaders(): Headers {
+    return this._responseHeaders;
   }
 
   // attach a request url parameter to the params object
@@ -70,25 +92,21 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
     return this._params;
   }
 
-  // get all the headers of a request
-  getHeaders(): Headers {
-    return this._headers;
-  }
-
   // get a specific header... or undefined
   getHeader(header: string): string | string[] | undefined {
     return this._headers.get(header.toLowerCase());
   }
 
-  setHeader(header: string, value: string | number | string[]) {
-    this._response.setHeader(header, value);
+  // set a response header
+  setHeader(header: string, value: string | string[]) {
+    this._responseHeaders.set(header, value);
   }
 
   response(data: ResponseBody, statusCode = 200) {
     const buffer = Buffer.from(JSON.stringify(data));
 
     if (statusCode) {
-      this._response.statusCode = statusCode;
+      this.statusCode = statusCode;
     }
 
     if (buffer.length) {
