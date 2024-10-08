@@ -99,8 +99,19 @@ export function handler(routes: Route[]) {
 
     context.__response.statusCode = context.statusCode ?? 200;
 
-    if (Object.keys(<object>context.responseData).length) {
-      const buffer = Buffer.from(JSON.stringify(context.responseData));
+    if (context.responseData) {
+      let buffer: Buffer = Buffer.from([]);      
+
+      if (typeof context.responseData === 'string' || typeof context.responseData === 'number' || typeof context.responseData === 'boolean') {
+        console.log('is string number or boolean:', context.responseData);
+        context.__response.setHeader('content-type', 'text/plain');
+        buffer = Buffer.from(String(context.responseData));
+      }
+
+      if (typeof context.responseData === 'object') {
+        context.__response.setHeader('content-type', 'application/json');
+        buffer = Buffer.from(JSON.stringify(context.responseData));
+      }
 
       context.__response.setHeader('content-length', buffer.length);
       context.__response.write(buffer);

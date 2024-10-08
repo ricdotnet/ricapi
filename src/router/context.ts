@@ -11,8 +11,8 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
   private readonly _headers: Headers = new Map();
 
   private _body: RequestBody = {} as RequestBody;
-  private _responseData: ResponseBody = {} as ResponseBody;
   private _data: ContextData = {} as ContextData;
+  private _responseData: ResponseBody = null as ResponseBody;
 
   private _params: { [key: string]: string | number } = {};
   private _statusCode: number | undefined;
