@@ -100,9 +100,13 @@ export function handler(routes: Route[]) {
     context.__response.statusCode = context.statusCode ?? 200;
 
     if (context.responseData) {
-      let buffer: Buffer = Buffer.from([]);      
+      let buffer: Buffer = Buffer.from([]);
 
-      if (typeof context.responseData === 'string' || typeof context.responseData === 'number' || typeof context.responseData === 'boolean') {
+      if (
+        typeof context.responseData === 'string' ||
+        typeof context.responseData === 'number' ||
+        typeof context.responseData === 'boolean'
+      ) {
         console.log('is string number or boolean:', context.responseData);
         context.__response.setHeader('content-type', 'text/plain');
         buffer = Buffer.from(String(context.responseData));
