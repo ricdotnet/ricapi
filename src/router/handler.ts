@@ -135,7 +135,7 @@ async function _404Handler(routes: Route[], context: Context) {
 
   let filePath = path.join(process.cwd(), 'src', 'views', '404.html');
   if (process.env.NODE_ENV !== 'development') {
-    filePath = path.join(process.cwd(), 'node_modules', '@ricdotnet/api', 'dist', 'src', 'views', '404.html');
+    filePath = path.join(process.cwd(), 'node_modules', '@ricdotnet/api', 'src', 'views', '404.html');
   }
 
   const _404View = await fs.readFile(path.join(filePath), 'utf8');
