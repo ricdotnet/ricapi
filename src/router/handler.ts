@@ -107,7 +107,6 @@ export function handler(routes: Route[]) {
         typeof context.responseData === 'number' ||
         typeof context.responseData === 'boolean'
       ) {
-        console.log('is string number or boolean:', context.responseData);
         context.__response.setHeader('content-type', 'text/plain');
         buffer = Buffer.from(String(context.responseData));
       }
