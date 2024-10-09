@@ -1,0 +1,25 @@
+name: "Bump package version"
+
+on:
+  push:
+    branches: ["master", "main"]
+
+jobs:
+  bump-package-version:
+    name: Bump package version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check bump type
+        run: |
+          echo BUMP=$(echo ${{ github.event.head_commit.message }} \
+          | grep -o "bump:\(major\|minor\|patch\)" \
+          | grep -o "major\|minor\|patch") >> $GITHUB_ENV
+
+      - name: Bump version
+        if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
+        run: |
+          npm version ${{ env.BUMP }}

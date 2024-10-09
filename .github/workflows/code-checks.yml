@@ -2,9 +2,9 @@ name: "Code Quality Checks"
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   style-checks:
@@ -12,45 +12,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-    - run: corepack enable
+      - run: corepack enable
 
-    - name: Install dependencies
-      run: |
-        export YARN_ENABLE_IMMUTABLE_INSTALLS=false
-        rm yarn.lock
-        yarn install
+      - name: Install dependencies
+        run: |
+          export YARN_ENABLE_IMMUTABLE_INSTALLS=false
+          rm yarn.lock
+          yarn install
 
-    - name: Run biome checks
-      run: yarn biome
+      - name: Run biome checks
+        run: yarn biome
 
   unit-tests:
     name: Unit tests
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-    - run: corepack enable
+      - run: corepack enable
 
-    - name: Install dependencies
-      run: |
-        export YARN_ENABLE_IMMUTABLE_INSTALLS=false
-        rm yarn.lock
-        yarn install
+      - name: Install dependencies
+        run: |
+          export YARN_ENABLE_IMMUTABLE_INSTALLS=false
+          rm yarn.lock
+          yarn install
 
-    - name: Run unit tests
-      run: yarn test
+      - name: Run unit tests
+        run: yarn test
