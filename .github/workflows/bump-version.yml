@@ -25,6 +25,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
 
+      - name: Set git config
+        if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
+        run: |
+          git config --global user.name '[Auto] Ricardo Rocha'
+          git config --global user.email 'ricdotnet@users.noreply.github.com'
+
       - name: Bump version
         if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
         run: |
@@ -32,10 +38,7 @@ jobs:
 
       - name: Push version change
         if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
-        run: |
-          git config --global user.name '[Auto] Ricardo Rocha'
-          git config --global user.email 'ricdotnet@users.noreply.github.com'
-          git push
+        run: git push
 
       - name: Enable corepack
         if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
