@@ -5,7 +5,7 @@ import { RicApiError } from '../errors';
 import type { Route } from '../types';
 import { HttpMethod } from './HttpMethod';
 import { Context } from './context';
-import { findMatch } from './router';
+import { findMatch, globalMiddlewares } from './router';
 
 class BodyParser {
   private readonly context: Context;
@@ -67,6 +67,15 @@ export function handler(routes: Route[]) {
     }
 
     // run middlewares if there is any
+
+    // global middlewares first
+    if (globalMiddlewares.length) {
+      for (const middleware of globalMiddlewares) {
+        await middleware(context);
+      }
+    }
+
+    // route middlewares next
     if (route.middlewares?.length) {
       for (const middleware of route.middlewares) {
         await middleware(context);
@@ -138,7 +147,15 @@ async function _404Handler(routes: Route[], context: Context) {
     filePath = path.join(process.cwd(), 'node_modules', '@ricdotnet/api', 'src', 'views', '404.html');
   }
 
-  const _404View = await fs.readFile(path.join(filePath), 'utf8');
+  let _404View: string | undefined;
+  try {
+    _404View = await fs.readFile(path.join(filePath), 'utf8');
+  } catch (err) {
+    console.error('404 view not found');
+    context.__response.writeHead(404, { 'content-type': 'application/json' });
+    context.__response.end(JSON.stringify({ message: 'Not Found' }));
+    return;
+  }
 
   context.__response.writeHead(404, { 'content-type': 'text/html' });
   context.__response.end(_404View);

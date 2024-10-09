@@ -2,8 +2,45 @@ import { createServer } from 'node:http';
 import { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
 import { handler } from './router/handler';
-import { addRoute, routes } from './router/router';
+import { addRoute, routes, globalMiddlewares } from './router/router';
 import type { IRicApi, Route, RouteHandler, RouteHandlerFunction } from './types';
+
+type RouteDefinition = {
+  path: string;
+  definition: {
+    method: HttpMethod;
+    handlers: RouteHandlerFunction | RouteHandlerFunction[];
+  };
+};
+
+const routesContainer: RouteDefinition[] = [];
+
+function registerRoutes() {
+  for (const route of routesContainer) {
+    const { path, definition } = route;
+    const { method, handlers } = definition;
+
+    const routeHandlerFunction = Array.isArray(handlers) ? handlers[handlers.length - 1] : handlers;
+
+    if (!routeHandlerFunction) {
+      throw new Error('No handler provided for the route.');
+    }
+
+    console.log(`Registering ${method}${path} route.`);
+
+    const addedRoute = addRoute(path, routeHandlerFunction, method) as unknown as Route;
+    let middlewares: RouteHandlerFunction[] | undefined;
+
+    if (Array.isArray(handlers)) {
+      if (!handlers.length) {
+        throw new Error('You passed an array of handlers but it is empty.');
+      }
+      middlewares = handlers.length ? handlers.slice(0, handlers.length - 1) : undefined;
+    }
+
+    addedRoute.middlewares = middlewares;
+  }
+}
 
 // when registering handlers, if we set an array with 1 that will be the route handler...
 // if we set an array with 2, the first one will be a middleware and the second one will be the handler
@@ -13,33 +50,23 @@ function routeDefinitionHandler(
 ): (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;
 function routeDefinitionHandler(method: HttpMethod) {
   return (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => {
-    const routeHandlerFunction = Array.isArray(handlers) ? handlers[handlers.length - 1] : handlers;
-
-    if (!routeHandlerFunction) {
-      throw new Error('No handler provided for the route.');
-    }
-
-    const route = addRoute(path, routeHandlerFunction, method) as unknown as Route;
-
-    let middlewares: RouteHandlerFunction[] | undefined;
-
-    if (Array.isArray(handlers)) {
-      if (!handlers.length) {
-        throw new Error('You passed an array of handlers but it is empty.');
-      }
-
-      middlewares = handlers.length ? handlers.slice(0, handlers.length - 1) : undefined;
-    }
-
-    route.middlewares = middlewares;
+    routesContainer.push({
+      path,
+      definition: {
+        method,
+        handlers,
+      },
+    });
 
     return routeDefinitions;
   };
 }
 
 const routeDefinitions: IRicApi = {
-  globalMiddlewares: (middlewares: RouteHandler[]) => {
-    // TODO: register global middlewares
+  globalMiddlewares: (middlewares: RouteHandlerFunction[]) => {
+    for (const middleware of middlewares) {
+      globalMiddlewares.push(middleware);
+    }
 
     return routeDefinitions;
   },
@@ -61,6 +88,18 @@ const routeDefinitions: IRicApi = {
     return routeDefinitions;
   },
   start: (port: number, cb) => {
+    if (!port) {
+      throw new Error('You must provide a port number to start the server.');
+    }
+
+    if (!process.env.NODE_ENV) {
+      process.env.NODE_ENV = 'development';
+    }
+
+    // register config
+    // global middlewares will register as soon as the globalMiddlewares function is called
+    registerRoutes();
+
     const server = createServer();
 
     server.on('request', handler(routes));

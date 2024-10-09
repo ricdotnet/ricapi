@@ -24,7 +24,7 @@ export interface RouteInterface {
 
 export interface IRicApi {
   config?: (config: { [key: string]: string }) => IRicApi;
-  globalMiddlewares?: (middlewares: RouteHandler[]) => IRicApi;
+  globalMiddlewares?: (middlewares: RouteHandlerFunction[]) => IRicApi;
   get: RouteDefinition;
   post: RouteDefinition;
   put: RouteDefinition;

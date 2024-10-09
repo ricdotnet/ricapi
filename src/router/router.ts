@@ -3,6 +3,7 @@ import type { HttpMethod } from './HttpMethod';
 import type { Context } from './context';
 
 const routes: Route[] = [];
+const globalMiddlewares: RouteHandlerFunction[] = [];
 
 function addRoute(path: string, handler: RouteHandlerFunction, method: HttpMethod, _routes = routes) {
   const parts = path.split('/').filter(Boolean);
@@ -23,8 +24,6 @@ function addRoute(path: string, handler: RouteHandlerFunction, method: HttpMetho
   }
 
   if (isLastPart) {
-    console.log(`Registering ${method}${!path.startsWith('/') ? `/${path}` : path} route.`);
-
     routeDef.handler = {
       ...routeDef.handler,
       [method]: handler,
@@ -89,4 +88,4 @@ function findMatch(pathParts: string[], children: Route[], context: Context): Ro
   return findMatch(pathParts, match.children, context);
 }
 
-export { routes, addRoute, findMatch };
+export { routes, addRoute, findMatch, globalMiddlewares };
