@@ -21,25 +21,31 @@ jobs:
           echo BUMP=$(echo ${{ github.event.head_commit.message }} \
           | grep -o "bump:\(major\|minor\|patch\)" \
           | grep -o "major\|minor\|patch") >> $GITHUB_ENV
-          if [[ $BUMP != 'major' && $BUMP != 'minor' && $BUMP != 'patch' ]]; then
-            exit 0
-          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
 
       - name: Bump version
+        if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
         run: |
           npm version ${{ env.BUMP }}
 
       - name: Push version change
+        if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
         run: |
           git config --global user.name '[Auto] Ricardo Rocha'
           git config --global user.email 'ricdotnet@users.noreply.github.com'
           git push
 
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Build package
-        run: yarn build
+        if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
+        run: |
+          yarn install
+          yarn build
 
       - name: Publish to npm
+        if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
         run: echo "Publishing to npm"
