@@ -51,7 +51,11 @@ jobs:
         run: |
           yarn install
           yarn build
+          cp package.json ./dist
 
       - name: Publish to npm
         if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
-        run: echo "Publishing to npm"
+        working-directory: ./dist
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
