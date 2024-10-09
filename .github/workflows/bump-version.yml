@@ -21,12 +21,14 @@ jobs:
           echo BUMP=$(echo ${{ github.event.head_commit.message }} \
           | grep -o "bump:\(major\|minor\|patch\)" \
           | grep -o "major\|minor\|patch") >> $GITHUB_ENV
+          if [[ $BUMP != 'major' && $BUMP != 'minor' && $BUMP != 'patch' ]]; then
+            exit 1
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
 
       - name: Bump version
-        if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
         run: |
           npm version ${{ env.BUMP }}
 
@@ -34,7 +36,6 @@ jobs:
         run: |
           git config --global user.name '[Auto] Ricardo Rocha'
           git config --global user.email 'ricdotnet@users.noreply.github.com'
-          git commit -am "Update package.json version"
           git push
 
       - name: Build package
