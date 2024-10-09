@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
 import { handler } from './router/handler';
-import { addRoute, routes, globalMiddlewares } from './router/router';
+import { addRoute, globalMiddlewares, routes } from './router/router';
 import type { IRicApi, Route, RouteHandler, RouteHandlerFunction } from './types';
 
 type RouteDefinition = {
