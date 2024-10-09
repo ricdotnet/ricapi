@@ -4,6 +4,9 @@ on:
   push:
     branches: ["master", "main"]
 
+permissions:
+  contents: write
+
 jobs:
   bump-package-version:
     name: Bump package version
@@ -19,7 +22,23 @@ jobs:
           | grep -o "bump:\(major\|minor\|patch\)" \
           | grep -o "major\|minor\|patch") >> $GITHUB_ENV
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+
       - name: Bump version
         if: ${{ env.BUMP == 'major' || env.BUMP == 'minor' || env.BUMP == 'patch' }}
         run: |
           npm version ${{ env.BUMP }}
+
+      - name: Push version change
+        run: |
+          git config --global user.name '[Auto] Ricardo Rocha'
+          git config --global user.email 'ricdotnet@users.noreply.github.com'
+          git commit -am "Update package.json version"
+          git push
+
+      - name: Build package
+        run: yarn build
+
+      - name: Publish to npm
+        run: echo "Publishing to npm"
