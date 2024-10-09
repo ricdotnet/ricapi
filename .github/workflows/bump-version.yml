@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ PAT_ACTIONS }}
+          token: ${{ secrets.PAT_ACTIONS }}
 
       - name: Check bump type
         run: |
