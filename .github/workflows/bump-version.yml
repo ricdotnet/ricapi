@@ -22,7 +22,7 @@ jobs:
           | grep -o "bump:\(major\|minor\|patch\)" \
           | grep -o "major\|minor\|patch") >> $GITHUB_ENV
           if [[ $BUMP != 'major' && $BUMP != 'minor' && $BUMP != 'patch' ]]; then
-            exit 1
+            exit 0
           fi
 
       - name: Set up Node.js
