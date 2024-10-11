@@ -15,6 +15,7 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
   private _responseData: ResponseBody = null as ResponseBody;
 
   private _params: { [key: string]: string | number } = {};
+  private _query: { [key: string]: string | number } = {};
   private _statusCode: number | undefined;
 
   private readonly _responseHeaders: Headers = new Map();
@@ -51,6 +52,18 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
 
   get statusCode(): number | undefined {
     return this._statusCode;
+  }
+
+  setQueryParam(key: string, value: string | number) {
+    this._query[key] = value;
+  }
+
+  getQueryParam(key: string): string | number | undefined {
+    return this._query[key];
+  }
+
+  get query(): { [key: string]: string | number } {
+    return this._query;
   }
 
   // set the request body

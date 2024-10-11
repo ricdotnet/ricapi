@@ -23,6 +23,6 @@
     }
   },
   "files": {
-    "ignore": ["*.json", "./test/**/*", "./dist/**/*"]
+    "ignore": ["*.json", "./test/**/*", "./dist/**/*", "node_modules/**/*"]
   }
 }

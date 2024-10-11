@@ -6,7 +6,8 @@
     "build": "rm -rf ./dist && tsc && yarn copy-views",
     "biome": "biome check .",
     "test": "NODE_ENV=test && vitest",
-    "copy-views": "cp -r ./src/views/ ./dist/src/views"
+    "copy-views": "cp -r ./src/views/ ./dist/src/views",
+    "test:live": "ts-node ./test/index.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.3",

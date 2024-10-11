@@ -3,7 +3,8 @@ import { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
 import { handler } from './router/handler';
 import { addRoute, globalMiddlewares, routes } from './router/router';
-import type { IRicApi, Route, RouteHandler, RouteHandlerFunction } from './types';
+import type { IRicApi, Route, RouteHandlerFunction } from './types';
+import { HttpStatusCodes } from './errors';
 
 type RouteDefinition = {
   path: string;
@@ -118,4 +119,4 @@ function RicApi(): IRicApi {
   return routeDefinitions;
 }
 
-export { RicApi, type Context };
+export { RicApi, HttpStatusCodes, type Context };

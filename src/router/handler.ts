@@ -33,12 +33,22 @@ class BodyParser {
   }
 }
 
+function extractQueryParams(query: string, context: Context) {
+  const currentQueryParams = new URLSearchParams(query);
+
+  for (const [key, value] of currentQueryParams) {
+    context.setQueryParam(key, value);
+  }
+}
+
 export function handler(routes: Route[]) {
   return async (incomingMessage: IncomingMessage, serverResponse: ServerResponse) => {
     if (!incomingMessage.url) return serverResponse.end();
 
     const { method, url, headers } = incomingMessage;
     const _method: HttpMethod = <HttpMethod>method ?? HttpMethod.GET;
+
+    const [path, query] = url.split('?');
 
     if (url === '/routes') {
       console.log(routes);
@@ -50,8 +60,10 @@ export function handler(routes: Route[]) {
     // generate a context
     const context = new Context(incomingMessage, serverResponse);
 
-    const pathParts = url.split('/').filter(Boolean);
+    const pathParts = path.split('/').filter(Boolean);
     const route: Route | undefined = findMatch(pathParts, routes, context);
+
+    extractQueryParams(query, context);
 
     if (!route?.handler[_method]) {
       return _404Handler(routes, context);
