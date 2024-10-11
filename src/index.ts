@@ -1,10 +1,10 @@
 import { createServer } from 'node:http';
+import { HttpStatusCodes } from './errors';
 import { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
 import { handler } from './router/handler';
 import { addRoute, globalMiddlewares, routes } from './router/router';
 import type { IRicApi, Route, RouteHandlerFunction } from './types';
-import { HttpStatusCodes } from './errors';
 
 type RouteDefinition = {
   path: string;
