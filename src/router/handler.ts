@@ -5,8 +5,8 @@ import { RicApiError } from '../errors';
 import type { Route } from '../types';
 import { HttpMethod } from './HttpMethod';
 import { Context } from './context';
-import { findMatch, globalMiddlewares } from './router';
 import { Response } from './response';
+import { findMatch, globalMiddlewares } from './router';
 
 class BodyParser {
   private readonly context: Context;
@@ -112,21 +112,38 @@ export function handler(routes: Route[]) {
         }
 
         if (response.body) {
+          let buf: Buffer | undefined;
+
           if (response.headers['content-type'] === 'application/json') {
-            context.__response.write(JSON.stringify(response.body));
+            buf = Buffer.from(JSON.stringify(response.body));
           } else {
-            context.__response.write(response.body.toString());
+            buf = Buffer.from(response.body.toString());
           }
+
+          // if we do not set a transfer-encoding header in the request handler, we use content-length by default
+          if (!response.headers['transfer-encoding'] && !response.headers['content-length']) {
+            context.__response.setHeader('content-length', buf.length);
+          }
+
+          context.__response.write(buf);
         }
       }
     } catch (error) {
       if (error instanceof RicApiError) {
-        context.__response.writeHead(error.statusCode, error.message, { 'Content-Type': 'application/json' });
+        context.__response.writeHead(error.statusCode, error.message);
+
+        if (error.data && typeof error.data === 'object') {
+          context.__response.setHeader('content-type', 'application/json');
+          context.__response.write(JSON.stringify(error.data));
+        } else if (error.data) {
+          context.__response.write(error.data.toString());
+        }
+
         context.__response.end();
         return;
       }
 
-      context.__response.writeHead(500, 'Internal Server Error', { 'Content-Type': 'application/json' });
+      context.__response.writeHead(500, 'Internal Server Error');
       context.__response.end();
     }
 
