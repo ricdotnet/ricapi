@@ -6,6 +6,7 @@ import type { Route } from '../types';
 import { HttpMethod } from './HttpMethod';
 import { Context } from './context';
 import { findMatch, globalMiddlewares } from './router';
+import { Response } from './response';
 
 class BodyParser {
   private readonly context: Context;
@@ -97,8 +98,27 @@ export function handler(routes: Route[]) {
     console.log(`Handling ${_method} ${url}`);
     const handlerFunction = route.handler[_method];
 
+    // biome-ignore lint/suspicious/noConfusingVoidType: the handler could not return anything
+    let response: void | Response | RicApiError;
+
     try {
-      await handlerFunction(context);
+      response = await handlerFunction(context);
+
+      if (response instanceof Response) {
+        context.__response.statusCode = response.status ?? 200;
+
+        for (const key in response.headers) {
+          context.__response.setHeader(key, response.headers[key]);
+        }
+
+        if (response.body) {
+          if (response.headers['content-type'] === 'application/json') {
+            context.__response.write(JSON.stringify(response.body));
+          } else {
+            context.__response.write(response.body.toString());
+          }
+        }
+      }
     } catch (error) {
       if (error instanceof RicApiError) {
         context.__response.writeHead(error.statusCode, error.message, { 'Content-Type': 'application/json' });
@@ -112,33 +132,6 @@ export function handler(routes: Route[]) {
 
     if (context.__response.writableFinished) {
       return;
-    }
-
-    context.responseHeaders.forEach((value, key) => {
-      context.__response.setHeader(key, value);
-    });
-
-    context.__response.statusCode = context.statusCode ?? 200;
-
-    if (context.responseData) {
-      let buffer: Buffer = Buffer.from([]);
-
-      if (
-        typeof context.responseData === 'string' ||
-        typeof context.responseData === 'number' ||
-        typeof context.responseData === 'boolean'
-      ) {
-        context.__response.setHeader('content-type', 'text/plain');
-        buffer = Buffer.from(String(context.responseData));
-      }
-
-      if (typeof context.responseData === 'object') {
-        context.__response.setHeader('content-type', 'application/json');
-        buffer = Buffer.from(JSON.stringify(context.responseData));
-      }
-
-      context.__response.setHeader('content-length', buffer.length);
-      context.__response.write(buffer);
     }
 
     context.__response.end();

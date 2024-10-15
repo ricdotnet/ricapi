@@ -1,24 +1,23 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { HttpMethod } from './HttpMethod';
 
-type Headers = Map<string, string | string[]>;
+type Headers = Record<string, string | string[]>;
 
-export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData = unknown> {
+export class Context<RequestBody = unknown, ContextData = unknown> {
   private readonly _request: IncomingMessage;
   private readonly _response: ServerResponse;
   private readonly _method: keyof typeof HttpMethod;
 
-  private readonly _headers: Headers = new Map();
+  private readonly _headers: Headers = {};
 
   private _body: RequestBody = {} as RequestBody;
   private _data: ContextData = {} as ContextData;
-  private _responseData: ResponseBody = null as ResponseBody;
 
   private _params: { [key: string]: string | number } = {};
   private _query: { [key: string]: string | number } = {};
   private _statusCode: number | undefined;
 
-  private readonly _responseHeaders: Headers = new Map();
+  private readonly _responseHeaders: Headers = {};
 
   constructor(request: IncomingMessage, response: ServerResponse) {
     this._request = request;
@@ -27,7 +26,7 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
 
     for (const header in request.headers) {
       if (request.headers[header]) {
-        this._headers.set(header, request.headers[header]);
+        this._headers[header] = request.headers[header];
       }
     }
   }
@@ -96,11 +95,6 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
     return this._data;
   }
 
-  // get the response data
-  get responseData(): ResponseBody {
-    return this._responseData;
-  }
-
   // attach a request url parameter to the params object
   setParam(key: string, value: string | number) {
     this._params[key] = value;
@@ -118,21 +112,10 @@ export class Context<RequestBody = unknown, ResponseBody = unknown, ContextData 
 
   // get a specific header... or undefined
   getHeader(header: string): string | string[] | undefined {
-    return this._headers.get(header.toLowerCase());
+    return this._headers[header.toLowerCase()];
   }
 
-  // set a response header
-  setHeader(header: string, value: string | string[]) {
-    this._responseHeaders.set(header, value);
-  }
-
-  response(data?: ResponseBody) {
-    if (data) {
-      this._responseData = data;
-    }
-  }
-
-  send() {
-    this._response.end();
-  }
+  // send() {
+  //   this._response.end();
+  // }
 }

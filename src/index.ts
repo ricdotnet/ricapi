@@ -1,10 +1,11 @@
 import { createServer } from 'node:http';
-import { HttpStatusCodes } from './errors';
+import { HttpStatusCodes, RicApiError } from './errors';
 import { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
 import { handler } from './router/handler';
+import { Response } from './router/response';
 import { addRoute, globalMiddlewares, routes } from './router/router';
-import type { IRicApi, Route, RouteHandlerFunction } from './types';
+import type { IRicApi, ResponseOptions, Route, RouteHandlerFunction } from './types';
 
 type RouteDefinition = {
   path: string;
@@ -119,4 +120,4 @@ function RicApi(): IRicApi {
   return routeDefinitions;
 }
 
-export { RicApi, HttpStatusCodes, type Context };
+export { RicApi, HttpStatusCodes, type Context, type ResponseOptions, Response, RicApiError };

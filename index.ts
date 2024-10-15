@@ -1,1 +1,1 @@
-export { RicApi, HttpStatusCodes, type Context } from './src';
+export { RicApi, HttpStatusCodes, type Context, type ResponseOptions, Response, RicApiError } from './src';
