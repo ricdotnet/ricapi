@@ -11,7 +11,7 @@ export type ResponseOptions = {
 export type RouteHandler = { [key in keyof typeof HttpMethod]?: RouteHandlerFunction };
 export type RouteHandlerFunction = (
   // biome-ignore lint/suspicious/noExplicitAny: generic handling...
-  context: Context<any, any, any>,
+  context: Context<any, any>,
   // biome-ignore lint/suspicious/noConfusingVoidType: we can return a RicApiError or nothing at all
 ) => (void | Response | RicApiError) | Promise<void | Response | RicApiError>;
 export type RouteDefinition = (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;

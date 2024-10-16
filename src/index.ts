@@ -103,7 +103,6 @@ const routeDefinitions: IRicApi = {
     registerRoutes();
 
     const server = createServer();
-
     server.on('request', handler(routes));
 
     server.listen(

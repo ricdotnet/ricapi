@@ -95,7 +95,6 @@ export function handler(routes: Route[]) {
       }
     }
 
-    console.log(`Handling ${_method} ${url}`);
     const handlerFunction = route.handler[_method];
 
     // biome-ignore lint/suspicious/noConfusingVoidType: the handler could not return anything
