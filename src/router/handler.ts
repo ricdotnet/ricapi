@@ -5,6 +5,7 @@ import { RicApiError } from '../errors';
 import type { Route } from '../types';
 import { HttpMethod } from './HttpMethod';
 import { Context } from './context';
+import { Response } from './response';
 import { findMatch, globalMiddlewares } from './router';
 
 class BodyParser {
@@ -94,51 +95,59 @@ export function handler(routes: Route[]) {
       }
     }
 
-    console.log(`Handling ${_method} ${url}`);
     const handlerFunction = route.handler[_method];
 
+    // biome-ignore lint/suspicious/noConfusingVoidType: the handler could not return anything
+    let response: void | Response | RicApiError;
+
     try {
-      await handlerFunction(context);
+      response = await handlerFunction(context);
+
+      if (response instanceof Response) {
+        context.__response.statusCode = response.status ?? 200;
+
+        for (const key in response.headers) {
+          context.__response.setHeader(key, response.headers[key]);
+        }
+
+        if (response.body) {
+          let buf: Buffer | undefined;
+
+          if (response.headers['content-type'] === 'application/json') {
+            buf = Buffer.from(JSON.stringify(response.body));
+          } else {
+            buf = Buffer.from(response.body.toString());
+          }
+
+          // if we do not set a transfer-encoding header in the request handler, we use content-length by default
+          if (!response.headers['transfer-encoding'] && !response.headers['content-length']) {
+            context.__response.setHeader('content-length', buf.length);
+          }
+
+          context.__response.write(buf);
+        }
+      }
     } catch (error) {
       if (error instanceof RicApiError) {
-        context.__response.writeHead(error.statusCode, error.message, { 'Content-Type': 'application/json' });
+        context.__response.writeHead(error.statusCode, error.message);
+
+        if (error.data && typeof error.data === 'object') {
+          context.__response.setHeader('content-type', 'application/json');
+          context.__response.write(JSON.stringify(error.data));
+        } else if (error.data) {
+          context.__response.write(error.data.toString());
+        }
+
         context.__response.end();
         return;
       }
 
-      context.__response.writeHead(500, 'Internal Server Error', { 'Content-Type': 'application/json' });
+      context.__response.writeHead(500, 'Internal Server Error');
       context.__response.end();
     }
 
     if (context.__response.writableFinished) {
       return;
-    }
-
-    context.responseHeaders.forEach((value, key) => {
-      context.__response.setHeader(key, value);
-    });
-
-    context.__response.statusCode = context.statusCode ?? 200;
-
-    if (context.responseData) {
-      let buffer: Buffer = Buffer.from([]);
-
-      if (
-        typeof context.responseData === 'string' ||
-        typeof context.responseData === 'number' ||
-        typeof context.responseData === 'boolean'
-      ) {
-        context.__response.setHeader('content-type', 'text/plain');
-        buffer = Buffer.from(String(context.responseData));
-      }
-
-      if (typeof context.responseData === 'object') {
-        context.__response.setHeader('content-type', 'application/json');
-        buffer = Buffer.from(JSON.stringify(context.responseData));
-      }
-
-      context.__response.setHeader('content-length', buffer.length);
-      context.__response.write(buffer);
     }
 
     context.__response.end();

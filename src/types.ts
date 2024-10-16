@@ -1,13 +1,19 @@
 import type { RicApiError } from './errors';
 import type { HttpMethod } from './router/HttpMethod';
 import type { Context } from './router/context';
+import type { Response } from './router/response';
+
+export type ResponseOptions = {
+  status?: number;
+  headers?: Record<string, string>;
+};
 
 export type RouteHandler = { [key in keyof typeof HttpMethod]?: RouteHandlerFunction };
 export type RouteHandlerFunction = (
   // biome-ignore lint/suspicious/noExplicitAny: generic handling...
-  context: Context<any, any, any>,
+  context: Context<any, any>,
   // biome-ignore lint/suspicious/noConfusingVoidType: we can return a RicApiError or nothing at all
-) => (void | RicApiError) | Promise<void | RicApiError>;
+) => (void | Response | RicApiError) | Promise<void | Response | RicApiError>;
 export type RouteDefinition = (path: string, handlers: RouteHandlerFunction | RouteHandlerFunction[]) => IRicApi;
 
 export type Route = {
