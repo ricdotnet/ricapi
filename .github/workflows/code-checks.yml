@@ -7,51 +7,11 @@ on:
     branches: ["master"]
 
 jobs:
-  style-checks:
-    name: Code style checks
+  code-checks:
     runs-on: ubuntu-latest
-
+    name: Run linting and tests
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - id: code-checks
+        uses: ricdotnet-org/js-code-checks@alpha
         with:
-          node-version: "20"
-
-      - run: corepack enable
-
-      - name: Install dependencies
-        run: |
-          export YARN_ENABLE_IMMUTABLE_INSTALLS=false
-          rm yarn.lock
-          yarn install
-
-      - name: Run biome checks
-        run: yarn biome
-
-  unit-tests:
-    name: Unit tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        run: |
-          export YARN_ENABLE_IMMUTABLE_INSTALLS=false
-          rm yarn.lock
-          yarn install
-
-      - name: Run unit tests
-        run: yarn test
+          package-manager: 'yarn'
