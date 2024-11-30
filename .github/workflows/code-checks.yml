@@ -12,6 +12,8 @@ jobs:
     name: Run linting and tests
     steps:
       - id: code-checks
-        uses: ricdotnet-org/js-code-checks@alpha_1
+        uses: ricdotnet-org/js-code-checks@v0.0.1
         with:
+          linting: true
+          tests: true
           package-manager: 'yarn'
