@@ -6,12 +6,24 @@ on:
   pull_request:
     branches: ["master"]
 
+env:
+  NODE_VERSION: 'node22'
+
 jobs:
   code-checks:
     runs-on: ubuntu-latest
     name: Run linting and tests
     steps:
-      - id: code-checks
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+    
+      - name: Code checks
+        id: code-checks
         uses: ricdotnet-org/js-code-checks@v1
         with:
           linting: 'true'
